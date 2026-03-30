@@ -1,0 +1,86 @@
+# ==============================================================================
+# WORKFLOW DE LINTING (QUALIDADE DE CÓDIGO)
+# ==============================================================================
+# Este arquivo é o "roteiro" que o GitHub Actions vai seguir para verificar
+# se o código do aplicativo e da API estão seguindo os padrões da equipe.
+
+# 'name' define o nome dessa automação que vai aparecer lá na aba "Actions" do GitHub.
+name: Lint Code Base
+
+# 'on' define o GATILHO. Ou seja, quando essa automação deve rodar?
+on:
+  pull_request:
+    # Vai rodar toda vez que alguém abrir um Pull Request (PR) querendo enviar 
+    # código novo para as branchs 'main' (produção) ou 'develop' (desenvolvimento).
+    branches: [ "main", "develop" ]
+
+# 'jobs' são as tarefas que o computador do GitHub vai executar.
+jobs:
+  # Criamos uma tarefa chamada 'lint'
+  lint:
+    # Nome visível dessa tarefa específica
+    name: Code Linting
+    
+    # 'runs-on' diz ao GitHub qual sistema operacional o computador virtual deve usar.
+    # Aqui estamos pedindo a versão mais recente do Linux Ubuntu.
+    runs-on: ubuntu-latest
+
+    # 'steps' é o passo a passo exato que o Ubuntu vai executar no terminal dele.
+    steps:
+      # ------------------------------------------------------------------------
+      # PASSO 1: BAIXAR O CÓDIGO DO REPOSITÓRIO
+      # ------------------------------------------------------------------------
+      - name: Checkout Code
+        # O 'uses' pega um script pronto do GitHub. Esse aqui clona o código 
+        # do repositório para dentro do computador virtual.
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------------------------
+      # PASSO 2: PREPARAR O AMBIENTE NODE.JS
+      # ------------------------------------------------------------------------
+      - name: Setup Node.js
+        # Esse script instala o Node.js no computador virtual.
+        uses: actions/setup-node@v4
+        with:
+          # 'node-version' força a usar a versão 20 (recomendada para React Native/NestJS).
+          node-version: '20'
+
+      # ========================================================================
+      # PASSO 3: VERIFICAÇÃO DO APP MOBILE (REACT NATIVE)
+      # ========================================================================
+      
+      - name: Install Mobile Dependencies
+        # A regra 'if' abaixo é o pulo do gato: ela diz para só rodar essa etapa
+        # SE o arquivo 'package.json' existir dentro da pasta 'mobile'.
+        # Isso evita que o GitHub dê erro antes do Claudio criar o projeto.
+        if: hashFiles('mobile/package.json') != ''
+        # 'working-directory' diz ao terminal para entrar na pasta '/mobile'
+        working-directory: ./mobile
+        # 'run' é o comando que será digitado no terminal. Aqui, ele baixa as dependências.
+        run: npm install
+
+      - name: Run Mobile Linter
+        # Só tenta rodar o linter se a pasta 'mobile' já tiver um projeto.
+        if: hashFiles('mobile/package.json') != ''
+        working-directory: ./mobile
+        # Roda o corretor de código do React Native. Se achar erros, a pipeline falha.
+        run: npm run lint
+
+      # ========================================================================
+      # PASSO 4: VERIFICAÇÃO DA API (NESTJS - FASE 2)
+      # ========================================================================
+      
+      - name: Install API Dependencies
+        # Mesma lógica do mobile: só roda se o projeto da API já tiver sido iniciado.
+        if: hashFiles('api/package.json') != ''
+        # Entra na pasta da API
+        working-directory: ./api
+        # Baixa as bibliotecas do backend
+        run: npm install
+
+      - name: Run API Linter
+        # Só verifica a API se a pasta não estiver vazia.
+        if: hashFiles('api/package.json') != ''
+        working-directory: ./api
+        # Roda o corretor de código do NestJS.
+        run: npm run lint
