@@ -1,48 +1,64 @@
+// Helpers para descrever o schema do WatermelonDB.
 import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
-// Schema = contrato do banco local.
-// Define tabelas, colunas e versão do banco.
+// Schema = contrato estrutural do banco local.
+// Tudo que existe no banco precisa estar definido aqui.
 export const schema = appSchema({
-  // Sempre aumente quando mudar estrutura de tabela no futuro (migrações).
+  // Versão do schema.
+  // Sempre aumente quando alterar tabelas/colunas (com migração correspondente).
   version: 1,
+
+  // Lista de tabelas do banco.
   tables: [
     tableSchema({
-      // Tabela de usuários locais.
+      // Nome da tabela de usuários.
       name: 'users',
+
+      // Colunas da tabela users.
       columns: [
-        // Obs importante: o Watermelon já cria id automaticamente.
-        // Não declare coluna id manualmente.
-        { name: 'name', type: 'string' }, // Nome exibido no app.
-        { name: 'email', type: 'string', isIndexed: true }, // Index melhora busca por email.
-        { name: 'password_hash', type: 'string' }, // Hash da senha, nunca senha em texto puro.
-        { name: 'currency_preference', type: 'string' }, // Moeda preferida: BRL, USD etc.
+        // O id NÃO é declarado aqui, pois o Watermelon cria automaticamente.
+        { name: 'name', type: 'string' }, // Nome exibido no perfil.
+        { name: 'email', type: 'string', isIndexed: true }, // Index acelera busca por email.
+        { name: 'password_hash', type: 'string' }, // Hash da senha para segurança.
+        { name: 'currency_preference', type: 'string' }, // Preferência de moeda (BRL/USD).
         { name: 'created_at', type: 'number' }, // Timestamp de criação.
-        { name: 'updated_at', type: 'number' }, // Timestamp de atualização.
+        { name: 'updated_at', type: 'number' }, // Timestamp da última atualização.
       ],
     }),
+
     tableSchema({
-      // Tabela de categorias (Streaming, SaaS, etc).
+      // Nome da tabela de categorias de assinatura.
       name: 'categories',
+
+      // Colunas da tabela categories.
       columns: [
-        { name: 'name', type: 'string' }, // Nome da categoria.
-        { name: 'icon', type: 'string' }, // Nome/identificador do ícone.
-        { name: 'created_at', type: 'number' }, // Controle de criação.
-        { name: 'updated_at', type: 'number' }, // Controle de atualização.
+        { name: 'name', type: 'string' }, // Ex: Streaming, Produtividade.
+        { name: 'icon', type: 'string' }, // Chave do ícone usado na UI.
+        { name: 'created_at', type: 'number' }, // Controle temporal.
+        { name: 'updated_at', type: 'number' }, // Controle temporal.
       ],
     }),
+
     tableSchema({
-      // Tabela principal do app: assinaturas.
+      // Tabela principal do produto: assinaturas do usuário.
       name: 'subscriptions',
+
+      // Colunas da tabela subscriptions.
       columns: [
-        { name: 'user_id', type: 'string', isIndexed: true }, // Relação com users.
-        { name: 'category_id', type: 'string', isIndexed: true }, // Relação com categories.
-        { name: 'service_name', type: 'string' }, // Ex: Netflix, Adobe.
-        { name: 'value', type: 'number' }, // Valor da assinatura.
-        { name: 'currency', type: 'string' }, // Moeda do valor.
-        { name: 'billing_date', type: 'number' }, // Dia do ciclo de cobrança (1-31).
-        { name: 'is_active', type: 'boolean' }, // Assinatura ativa ou cancelada.
-        { name: 'created_at', type: 'number' }, // Data de criação local.
-        { name: 'updated_at', type: 'number' }, // Data de atualização local.
+        // Chaves de relacionamento (FK lógica) para users e categories.
+        { name: 'user_id', type: 'string', isIndexed: true }, // Dono da assinatura.
+        { name: 'category_id', type: 'string', isIndexed: true }, // Categoria da assinatura.
+
+        // Dados do serviço assinado.
+        { name: 'service_name', type: 'string' }, // Ex: Netflix, Adobe, Spotify.
+        { name: 'value', type: 'number' }, // Valor da cobrança.
+        { name: 'currency', type: 'string' }, // Moeda (BRL, USD...).
+        { name: 'billing_date', type: 'number' }, // Dia do mês da cobrança (1-31).
+        { name: 'is_active', type: 'boolean' }, // Status ativo/cancelado.
+
+        // Metadados para auditoria/sincronização futura.
+        { name: 'created_at', type: 'number' }, // Criação local.
+        { name: 'updated_at', type: 'number' }, // Última alteração local.
       ],
     }),
   ],
