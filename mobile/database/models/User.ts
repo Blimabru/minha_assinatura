@@ -23,6 +23,11 @@ export default class User extends Model {
   @children('subscriptions') subscriptions!: Query<Subscription>;
 
   // Campos de auditoria (somente leitura no model).
-  @readonly @date('created_at') createdAt!: Date;
-  @readonly @date('updated_at') updatedAt!: Date;
+  @readonly
+  @date('created_at')
+  createdAt!: Date;
+
+  @readonly
+  @date('updated_at')
+  updatedAt!: Date;
 }
