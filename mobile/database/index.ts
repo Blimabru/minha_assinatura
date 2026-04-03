@@ -1,30 +1,50 @@
+// Classe principal do WatermelonDB.
+// Responsável por orquestrar adapter + models + operações de banco.
 import { Database } from '@nozbe/watermelondb';
+
+// Adapter SQLite para React Native.
+// Ele faz a ponte entre WatermelonDB e o SQLite nativo do dispositivo.
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
 
+// Schema define estrutura física das tabelas e colunas.
 import { schema } from './schema';
+
+// Models representam o "mapa objeto" das tabelas.
+// Importante: sem registrar models, não há tipagem nem relações.
 import User from './models/User';
 import Category from './models/Category';
 import Subscription from './models/Subscription';
 
 // Lista de models registrada no banco.
-// Sem isso, Watermelon não consegue instanciar os registros corretamente.
+// Ordem não é obrigatória, mas manter consistente ajuda manutenção.
 const modelClasses = [User, Category, Subscription];
 
-// Adapter conecta Watermelon com SQLite nativo.
+// Cria o adapter do SQLite.
+// Importante: adapter é a camada que realmente conversa com o banco local.
 const adapter = new SQLiteAdapter({
-  schema, // Estrutura das tabelas.
-  dbName: 'db-minha_assinatura', // Nome físico do arquivo local.
-  jsi: true, // Melhor performance (ponte JSI).
+  // Contrato das tabelas/colunas usado na criação e validação do banco.
+  schema,
+
+  // Nome físico do banco no storage do app.
+  // Se mudar este nome, você cria outro banco (vazio) em paralelo.
+  dbName: 'db-minha_assinatura',
+
+  // JSI melhora performance por reduzir overhead da bridge.
+  // Em RN moderno, é a opção recomendada.
+  jsi: true,
+
+  // Callback para capturar erro de setup (schema inválido, migração, etc).
   onSetUpError: (error) => {
-    // Log útil para diagnosticar erro de schema/migração.
     console.error('Erro ao inicializar o WatermelonDB:', error);
   },
 });
 
-// Singleton do banco para ser reutilizado no app inteiro.
+// Instância única (singleton) do banco.
+// Importante: evita múltiplas conexões e garante consistência global.
 export const database = new Database({
-  adapter,
-  modelClasses,
+  adapter, // Canal de comunicação com SQLite.
+  modelClasses, // Entidades registradas para uso no app.
 });
 
+// Export default para facilitar imports no restante da app.
 export default database;
