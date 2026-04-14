@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import database from '@/database';
 
 // Tipo do model Subscription para dar segurança de tipos nas queries.
-import type Subscription from '@/database/models/Subscription';
+import Subscription from '@/database/models/Subscription';
 
 // Tipo "de saída" para a UI.
 // Importante: a tela não depende do model bruto do banco.
@@ -62,6 +62,54 @@ export function useSubscriptions() {
         return () => subscription.unsubscribe();
     }, []);
 
+    // Busca uma assinatura específica pelo ID
+    const getSubscriptionById = async (id: string): Promise<SubscriptionItem | null> => {
+        try {
+            const collection = database.get<Subscription>('subscription');
+            // 'find' busca um registro específico pelo ID no WatermelonDB
+            const row = await collection.find(id);
+
+            return {
+                id: row.id,
+                serviceName: row.serviceName,
+                value: row.value,
+                currency: row.currency,
+                billingDate: row.billingDate,
+                isActive: row.isActive,
+            };
+        } catch (error) {
+            console.error("Erro ao buscar assinatura:", error);
+            return null;
+        }
+    };
+
+    // Atualiza os dados de uma assinatura
+    // Aceita um objeto parcial apenas com os campos que você deseja alterar
+    const updateSubscription = async (id: string, dataToUpdate: { value?: number; billingDate?: number }) => {
+        try {
+            const collection = database.get<Subscription>('subscriptions');
+            
+            // Qualquer modificação no WatermelonDB DEVE estar dentro de um database.write()
+            await database.write(async () => {
+                const record = await collection.find(id);
+                
+                await record.update((subscription) => {
+                    // Atualiza o valor apenas se ele foi passado
+                    if (dataToUpdate.value !== undefined) {
+                        subscription.value = dataToUpdate.value;
+                    }
+                    // Atualiza a data apenas se ela foi passada
+                    if (dataToUpdate.billingDate !== undefined) {
+                        subscription.billingDate = dataToUpdate.billingDate;
+                    }
+                });
+            });
+        } catch (error) {
+            console.error("Erro ao atualizar a assinatura:", error);
+            throw error; // Joga o erro para a UI poder exibir um alerta
+        }
+    };
+
     // Derivação memoizada: só assinaturas ativas.
     // Importante: evita recalcular em toda render sem necessidade.
     const activeSubscriptions = useMemo(
@@ -83,5 +131,7 @@ export function useSubscriptions() {
         items, // Lista completa.
         activeSubscriptions, // Lista filtrada para o dashboard.
         monthlyTotal, // Total mensal consolidado.
+        getSubscriptionById,
+        updateSubscription,
     };
 }
