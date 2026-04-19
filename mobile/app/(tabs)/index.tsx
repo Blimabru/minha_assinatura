@@ -1,5 +1,5 @@
-import { StyleSheet } from 'react-native';
-import { useEffect, useState } from 'react';
+import { StyleSheet, ScrollView } from 'react-native';
+import { useEffect, useState, useRef } from 'react';
 
 import EditScreenInfo from '@/components/EditScreenInfo';
 import { Text, View } from '@/components/Themed';
@@ -9,6 +9,7 @@ import { BatteryOptimizationAlert } from '@/src/components/BatteryOptimizationAl
 export default function TabOneScreen() {
   const { isBatteryOptimizationEnabled, checkPermission } = useBatteryOptimization();
   const [showAlert, setShowAlert] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     // Mostrar alerta se a otimização estiver ativa
@@ -17,9 +18,21 @@ export default function TabOneScreen() {
     }
   }, [isBatteryOptimizationEnabled]);
 
+  useEffect(() => {
+    return () => {
+      // Cleanup: limpar timeout ao desmontar
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   const handlePermissionGranted = async () => {
     // Aguardar um tempo para o usuário voltar das configurações
-    setTimeout(() => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
       checkPermission();
       setShowAlert(false);
     }, 1500);
@@ -27,11 +40,13 @@ export default function TabOneScreen() {
 
   return (
     <>
-      <View style={styles.container}>
-        <Text style={styles.title}>Tab One</Text>
-        <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-        <EditScreenInfo path="app/(tabs)/index.tsx" />
-      </View>
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.container}>
+          <Text style={styles.title}>Tab One</Text>
+          <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
+          <EditScreenInfo path="app/(tabs)/index.tsx" />
+        </View>
+      </ScrollView>
 
       <BatteryOptimizationAlert
         visible={showAlert}
@@ -43,10 +58,13 @@ export default function TabOneScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scrollView: {
     flex: 1,
+  },
+  container: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 20,
   },
   title: {
     fontSize: 20,
