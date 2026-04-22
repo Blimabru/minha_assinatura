@@ -1,4 +1,4 @@
-import { NativeModules, Platform } from 'react-native';
+import { NativeModules, Platform, NativeEventEmitter } from 'react-native';
 
 const { BatteryOptimization } = NativeModules;
 
@@ -7,6 +7,7 @@ interface BatteryOptimizationService {
   requestBatteryOptimizationExemption(): Promise<boolean>;
   openBatterySettings(): Promise<boolean>;
   openAppBatterySettings(): Promise<boolean>;
+  addEventListener(callback: (isEnabled: boolean) => void): () => void;
 }
 
 const createBatteryOptimizationService = (): BatteryOptimizationService => {
@@ -16,9 +17,12 @@ const createBatteryOptimizationService = (): BatteryOptimizationService => {
       requestBatteryOptimizationExemption: async () => false,
       openBatterySettings: async () => false,
       openAppBatterySettings: async () => false,
+      addEventListener: () => () => {},
     };
   }
 
+  const emitter = new NativeEventEmitter(BatteryOptimization);
+  
   return {
     isBatteryOptimizationEnabled: () =>
       new Promise((resolve, reject) => {
@@ -59,6 +63,17 @@ const createBatteryOptimizationService = (): BatteryOptimizationService => {
           }
         );
       }),
+
+    addEventListener: (callback: (isEnabled: boolean) => void) => {
+      const subscription = emitter.addListener(
+        'batteryOptimizationChanged',
+        callback
+      );
+      
+      return () => {
+        subscription.remove();
+      };
+    },
   };
 };
 

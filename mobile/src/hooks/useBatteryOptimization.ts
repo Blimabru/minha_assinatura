@@ -28,7 +28,18 @@ export const useBatteryOptimization = (): UseBatteryOptimizationReturn => {
   };
 
   useEffect(() => {
+    // Verificação inicial
     checkPermission();
+    
+    // Escutar mudanças em tempo real
+    const unsubscribe = batteryOptimizationService.addEventListener((isEnabled: boolean) => {
+      setIsBatteryOptimizationEnabled(isEnabled);
+    });
+
+    // Cleanup
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   return {
