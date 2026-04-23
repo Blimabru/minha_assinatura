@@ -10,7 +10,7 @@ import Subscription from '@/database/models/Subscription';
 
 // Tipo "de saída" para a UI.
 // Importante: a tela não depende do model bruto do banco.
-type SubscriptionItem = {
+export type SubscriptionItem = {
     id: string; // Identificador único da assinatura.
     serviceName: string; // Nome do serviço (Netflix, Adobe, etc).
     value: number; // Valor numérico da assinatura.
