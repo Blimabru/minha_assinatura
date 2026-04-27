@@ -17,6 +17,11 @@ export default class Category extends Model {
   // Permite listar assinaturas da categoria.
   @children('subscriptions') subscriptions!: Query<Subscription>;
 
-  @readonly @date('created_at') createdAt!: Date;
-  @readonly @date('updated_at') updatedAt!: Date;
+  @readonly
+  @date('created_at')
+  createdAt!: Date;
+
+  @readonly
+  @date('updated_at')
+  updatedAt!: Date;
 }

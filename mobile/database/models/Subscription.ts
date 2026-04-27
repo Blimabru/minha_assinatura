@@ -40,6 +40,11 @@ export default class Subscription extends Model {
   @relation('categories', 'category_id') category!: Relation<Category>;
 
   // Campos de auditoria em modo somente leitura.
-  @readonly @date('created_at') createdAt!: Date;
-  @readonly @date('updated_at') updatedAt!: Date;
+  @readonly
+  @date('created_at')
+  createdAt!: Date;
+
+  @readonly
+  @date('updated_at')
+  updatedAt!: Date;
 }
