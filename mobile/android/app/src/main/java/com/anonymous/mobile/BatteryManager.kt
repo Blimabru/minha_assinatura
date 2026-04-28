@@ -1,7 +1,7 @@
 package com.anonymous.mobile
 
 import android.content.Context
-import android.os.BatteryManager
+import android.os.BatteryManager as AndroidBatteryManager
 import android.os.Build
 import android.os.PowerManager
 import android.content.Intent
@@ -16,8 +16,8 @@ import android.content.IntentFilter
  */
 class BatteryManager(private val context: Context) {
   private val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
-  private val batteryManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-    context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+  private val androidBatteryManager = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    context.getSystemService(Context.BATTERY_SERVICE) as? AndroidBatteryManager
   } else {
     null
   }
@@ -57,8 +57,8 @@ class BatteryManager(private val context: Context) {
       val intentFilter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
       val batteryStatus: Intent? = context.registerReceiver(null, intentFilter)
       
-      val level = batteryStatus?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
-      val scale = batteryStatus?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
+      val level = batteryStatus?.getIntExtra(AndroidBatteryManager.EXTRA_LEVEL, -1) ?: -1
+      val scale = batteryStatus?.getIntExtra(AndroidBatteryManager.EXTRA_SCALE, 100) ?: 100
       
       if (level >= 0) {
         (level * 100) / scale

@@ -1,8 +1,7 @@
 package com.anonymous.mobile
 
-import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
-import com.facebook.react.bridge.ReactContext
+import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.WritableMap
@@ -17,13 +16,20 @@ import com.facebook.react.bridge.WritableNativeMap
  * - getBatteryStatus(): Promise<object>
  * - getBatteryLevel(): Promise<number>
  */
-class RNCBatteryManagerModule(reactContext: ReactApplicationContext) :
-  NativeModule(reactContext) {
+class RNCBatteryManagerModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
   
   private val batteryManager = BatteryManager(reactContext)
 
   override fun getName(): String {
     return "RNCBatteryManager"
+  }
+
+  override fun initialize() {
+    // Inicialização não é necessária para este módulo
+  }
+
+  override fun invalidate() {
+    // Limpeza não é necessária para este módulo
   }
 
   /**
