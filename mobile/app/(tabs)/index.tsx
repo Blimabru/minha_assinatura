@@ -3,6 +3,7 @@ import { useState } from 'react';
 
 // Componentes nativos para botão, lista e estilos.
 import { Alert, FlatList, Pressable, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 
 // Q = helper de query do Watermelon (where, etc).
 import { Q } from '@nozbe/watermelondb';
@@ -27,7 +28,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 // Tela principal da aba Dashboard.
 export default function TabOneScreen() {
   // Dados derivados do banco (reativos).
-  const { loading, activeSubscriptions, monthlyTotal, updateSubscription } = useSubscriptions();
+  const { loading, activeSubscriptions, monthlyTotal, updateSubscription, categories } = useSubscriptions();
 
   // Estado para bloquear múltiplos cliques no botão de criar.
   const [creating, setCreating] = useState(false);
@@ -35,8 +36,11 @@ export default function TabOneScreen() {
   // Estados para o modal de edição
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionItem | null>(null);
+  const [editServiceName, setEditServiceName] = useState('');
   const [editValue, setEditValue] = useState('');
+  const [editCurrency, setEditCurrency] = useState('');
   const [editBillingDate, setEditBillingDate] = useState('');
+  const [editCategoryId, setEditCategoryId] = useState('');
 
   // Função de teste para inserir dados locais.
   // Importante: valida o fluxo offline-first ponta a ponta.
@@ -115,8 +119,11 @@ export default function TabOneScreen() {
   // Função para abrir modal de edição
   function openEditModal(subscription: SubscriptionItem) {
     setSelectedSubscription(subscription);
+    setEditServiceName(subscription.serviceName);
     setEditValue(subscription.value.toString());
+    setEditCurrency(subscription.currency);
     setEditBillingDate(subscription.billingDate.toString());
+    setEditCategoryId(subscription.categoryId);
     setModalVisible(true);
   }
 
@@ -127,8 +134,18 @@ export default function TabOneScreen() {
     const newValue = parseFloat(editValue);
     const newBillingDate = parseInt(editBillingDate);
 
+    if (!editServiceName.trim()) {
+      Alert.alert('Erro', 'Nome do serviço é obrigatório.');
+      return;
+    }
+
     if (isNaN(newValue) || newValue <= 0) {
       Alert.alert('Erro', 'Valor deve ser um número positivo.');
+      return;
+    }
+
+    if (!editCurrency.trim()) {
+      Alert.alert('Erro', 'Moeda é obrigatória.');
       return;
     }
 
@@ -137,10 +154,18 @@ export default function TabOneScreen() {
       return;
     }
 
+    if (!editCategoryId) {
+      Alert.alert('Erro', 'Categoria é obrigatória.');
+      return;
+    }
+
     try {
       await updateSubscription(selectedSubscription.id, {
+        serviceName: editServiceName.trim(),
         value: newValue,
+        currency: editCurrency.trim(),
         billingDate: newBillingDate,
+        categoryId: editCategoryId,
       });
       Alert.alert('Sucesso', 'Assinatura atualizada com sucesso.');
       setModalVisible(false);
@@ -197,7 +222,14 @@ export default function TabOneScreen() {
           <Text style={styles.modalTitle}>Editar Assinatura</Text>
           {selectedSubscription && (
             <>
-              <Text style={styles.modalLabel}>Serviço: {selectedSubscription.serviceName}</Text>
+              <Text style={styles.modalLabel}>Nome do Serviço:</Text>
+              <TextInput
+                style={styles.input}
+                value={editServiceName}
+                onChangeText={setEditServiceName}
+                placeholder="Ex: Netflix"
+              />
+
               <Text style={styles.modalLabel}>Valor:</Text>
               <TextInput
                 style={styles.input}
@@ -206,6 +238,15 @@ export default function TabOneScreen() {
                 keyboardType="numeric"
                 placeholder="Ex: 39.90"
               />
+
+              <Text style={styles.modalLabel}>Moeda:</Text>
+              <TextInput
+                style={styles.input}
+                value={editCurrency}
+                onChangeText={setEditCurrency}
+                placeholder="Ex: BRL, USD"
+              />
+
               <Text style={styles.modalLabel}>Dia de Vencimento:</Text>
               <TextInput
                 style={styles.input}
@@ -214,6 +255,21 @@ export default function TabOneScreen() {
                 keyboardType="numeric"
                 placeholder="Ex: 10"
               />
+
+              <Text style={styles.modalLabel}>Categoria:</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={editCategoryId}
+                  onValueChange={(itemValue: string) => setEditCategoryId(itemValue)}
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Selecione uma categoria" value="" />
+                  {categories.map((category) => (
+                    <Picker.Item key={category.id} label={category.name} value={category.id} />
+                  ))}
+                </Picker>
+              </View>
+
               <Pressable style={styles.saveButton} onPress={handleSaveEdit}>
                 <Text style={styles.saveButtonText}>Salvar</Text>
               </Pressable>
@@ -325,5 +381,15 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     color: '#000',
     fontSize: 16,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    marginBottom: 15,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
   },
 });
