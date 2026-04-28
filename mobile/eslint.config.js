@@ -6,5 +6,17 @@ module.exports = defineConfig([
   expoConfig,
   {
     ignores: ["dist/*"],
-  }
+  },
+  {
+    files: ["**/__tests__/**/*.js"],
+    languageOptions: {
+      globals: {
+        it: "readonly",
+        expect: "readonly",
+        describe: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
+      },
+    },
+  },
 ]);

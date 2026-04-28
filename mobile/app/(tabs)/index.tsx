@@ -11,7 +11,7 @@ import { Q } from '@nozbe/watermelondb';
 import { Text, View } from '@/components/Themed';
 
 // Instância singleton do banco.
-import database from '@/database';
+import { database } from '@/database';
 
 // Models para tipagem das coleções.
 import User from '@/database/models/User';
