@@ -92,6 +92,11 @@ export const useSubscriptionNotifications = () => {
           daysBeforeExpiration
         );
 
+        // Validar que notificação foi agendada com sucesso
+        if (!notificationId) {
+          throw new Error('Falha ao obter ID da notificação agendada');
+        }
+
         const newAlert: ScheduledAlert = {
           subscriptionName,
           expirationDate,
@@ -105,6 +110,7 @@ export const useSubscriptionNotifications = () => {
           isLoading: false,
         }));
 
+        console.log(`Hook: Alerta agendado com sucesso para "${subscriptionName}"`);
         return notificationId;
       } catch (error) {
         const errorMessage = `Erro ao agendar alerta: ${error}`;

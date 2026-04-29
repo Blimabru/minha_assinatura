@@ -16,7 +16,10 @@ export class SubscriptionNotificationService {
   private static instance: SubscriptionNotificationService;
 
   private constructor() {
-    this.initializeNotifications();
+    // Inicializar notificações de forma segura
+    this.initializeNotifications().catch((error) => {
+      console.error('Erro ao inicializar notificações:', error);
+    });
   }
 
   static getInstance(): SubscriptionNotificationService {
@@ -73,14 +76,26 @@ export class SubscriptionNotificationService {
     daysBeforeExpiration: number = 0
   ): Promise<string> {
     try {
+      // Validar inputs
+      if (!subscriptionName || !expirationDate) {
+        throw new Error('Nome da assinatura e data de vencimento são obrigatórios');
+      }
+
       // Calcular data/hora do alerta
       const alertDate = new Date(expirationDate);
       alertDate.setDate(alertDate.getDate() - daysBeforeExpiration);
 
-      // Se a data do alerta já passou, não agendar
+      // Se a data do alerta já passou, lançar erro
       if (alertDate < new Date()) {
-        console.warn(`Data de alerta já passou para ${subscriptionName}`);
-        return '';
+        throw new Error(
+          `Não é possível agendar notificação para ${subscriptionName}: data já passou (${alertDate.toLocaleString('pt-BR')})`
+        );
+      }
+
+      // Calcular segundos até o alerta
+      const secondsUntilAlert = Math.floor((alertDate.getTime() - Date.now()) / 1000);
+      if (secondsUntilAlert < 1) {
+        throw new Error('Tempo para alerta é muito curto (mínimo 1 segundo)');
       }
 
       // Agendar notificação
@@ -100,11 +115,11 @@ export class SubscriptionNotificationService {
         },
         trigger: {
           type: 'timeInterval' as const,
-          seconds: Math.max(1, Math.floor((alertDate.getTime() - Date.now()) / 1000)),
+          seconds: secondsUntilAlert,
         } as any,
       });
 
-      console.log(`✓ Notificação agendada: ${subscriptionName} em ${alertDate.toISOString()}`);
+      console.log(`✓ Notificação agendada: "${subscriptionName}" para ${alertDate.toLocaleString('pt-BR')} (ID: ${notificationId})`);
       return notificationId;
     } catch (error) {
       console.error('Erro ao agendar notificação:', error);

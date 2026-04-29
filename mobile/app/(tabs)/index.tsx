@@ -1,17 +1,15 @@
-import { StyleSheet, ScrollView } from 'react-native';
-import { NotificationTestPanel } from '@/src/components/NotificationTestPanel';
+import { StyleSheet, View } from 'react-native';
 
 export default function TabOneScreen() {
   return (
-    <ScrollView style={styles.scrollView}>
-      {/* Painel de Notificações */}
-      <NotificationTestPanel />
-    </ScrollView>
+    <View style={styles.container}>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
+  container: {
     flex: 1,
+    padding: 16,
   },
 });
