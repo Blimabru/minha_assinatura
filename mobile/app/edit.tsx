@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
@@ -16,30 +16,25 @@ export default function EditSubscriptionScreen() {
   // (Atenção: verifique se os nomes das funções dentro do seu useSubscription.ts são exatamente esses)
   const { getSubscriptionById, updateSubscription } = useSubscriptions();
 
-  useEffect(() => {
-    if (id) {
-      carregarDadosDaAssinatura();
+  const carregarDadosDaAssinatura = useCallback(async () => {
+  try {
+    const assinaturaId = Array.isArray(id) ? id[0] : id; 
+    const assinatura = await getSubscriptionById(assinaturaId);
+    if (assinatura) {
+      setValor(String(assinatura.value)); 
+      setDataVencimento(String(assinatura.billingDate));
     }
-  }, [id]);
+  } catch (error) {
+    console.error(error);
+    Alert.alert('Erro', 'Não foi possível carregar os dados da assinatura.');
+  }
+}, [id, getSubscriptionById]);
 
-  const carregarDadosDaAssinatura = async () => {
-    try {
-      // 3. USANDO A FUNÇÃO DE BUSCA
-      // Como 'id' vem da URL, ele pode ser string ou array de strings. Garantimos que é string:
-      const assinaturaId = Array.isArray(id) ? id[0] : id; 
-      
-      const assinatura = await getSubscriptionById(assinaturaId);
-      
-      if (assinatura) {
-        // Preenche os campos com os dados que vieram do banco
-        setValor(String(assinatura.value)); 
-        setDataVencimento(String(assinatura.billingDate));
-      }
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Erro', 'Não foi possível carregar os dados da assinatura.');
-    }
-  };
+useEffect(() => {
+  if (id) {
+    carregarDadosDaAssinatura();
+  }
+}, [id, carregarDadosDaAssinatura]);
 
   const handleSalvar = async () => {
     if (!valor || !dataVencimento) {
