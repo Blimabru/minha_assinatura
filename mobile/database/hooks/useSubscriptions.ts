@@ -6,17 +6,20 @@ import { useEffect, useMemo, useState } from 'react';
 import database from '@/database';
 
 // Tipo do model Subscription para dar segurança de tipos nas queries.
-import type Subscription from '@/database/models/Subscription';
+import Subscription from '@/database/models/Subscription';
+import Category from '@/database/models/Category';
 
 // Tipo "de saída" para a UI.
 // Importante: a tela não depende do model bruto do banco.
-type SubscriptionItem = {
+export type SubscriptionItem = {
     id: string; // Identificador único da assinatura.
     serviceName: string; // Nome do serviço (Netflix, Adobe, etc).
     value: number; // Valor numérico da assinatura.
     currency: string; // Moeda do valor (BRL, USD...).
     billingDate: number; // Dia do ciclo de cobrança (1-31).
     isActive: boolean; // Se assinatura está ativa.
+    categoryId: string; // ID da categoria.
+    categoryName: string; // Nome da categoria.
 };
 
 // Hook customizado para centralizar leitura de assinaturas.
@@ -27,6 +30,50 @@ export function useSubscriptions() {
 
     // Estado de carregamento para controlar o feedback visual da tela.
     const [loading, setLoading] = useState(true);
+
+    // Estado para armazenar as categorias disponíveis
+    const [categories, setCategories] = useState<Category[]>([]);
+
+    // Efeito para carregar categorias
+    useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const categoryCollection = database.get<Category>('categories');
+                const categoryRows = await categoryCollection.query().fetch();
+                setCategories(categoryRows);
+            } catch (error) {
+                console.error("Erro ao carregar categorias:", error);
+            }
+        };
+        loadCategories();
+    }, []);
+
+    // Função para carregar assinaturas do banco e atualizar o estado.
+    const loadSubscriptions = async () => {
+        try {
+            const collection = database.get<Subscription>('subscriptions');
+            const rows = await collection.query().fetch();
+            const mapped = await Promise.all(rows.map(async (row) => {
+                const category = await row.category.fetch();
+
+                return {
+                    id: row.id,
+                    serviceName: row.serviceName,
+                    value: row.value,
+                    currency: row.currency,
+                    billingDate: row.billingDate,
+                    isActive: row.isActive,
+                    categoryId: row.categoryId,
+                    categoryName: category.name,
+                };
+            }));
+
+            setItems(mapped);
+            setLoading(false);
+        } catch (error) {
+            console.error("Erro ao carregar assinaturas:", error);
+        }
+    };
 
     // Efeito executado ao montar o componente.
     // Importante: cria assinatura reativa no banco e limpa ao desmontar.
@@ -39,28 +86,87 @@ export function useSubscriptions() {
         const subscription = collection
             .query()
             .observe()
-            .subscribe((rows) => {
-                // Mapeia do model do banco para o formato da UI.
-                // Importante: desacopla banco de dados da camada visual.
-                const mapped = rows.map((row) => ({
-                    id: row.id,
-                    serviceName: row.serviceName,
-                    value: row.value,
-                    currency: row.currency,
-                    billingDate: row.billingDate,
-                    isActive: row.isActive,
-                }));
-
-                // Atualiza estado com dados mais recentes.
-                setItems(mapped);
-
-                // Marca que terminou a primeira carga.
-                setLoading(false);
+            .subscribe(() => {
+                loadSubscriptions();
             });
+
+        // Executa a primeira carga inicial.
+        loadSubscriptions();
 
         // Cleanup obrigatório para evitar vazamento de memória.
         return () => subscription.unsubscribe();
     }, []);
+
+    // Busca uma assinatura específica pelo ID
+    const getSubscriptionById = async (id: string): Promise<SubscriptionItem | null> => {
+        try {
+            const collection = database.get<Subscription>('subscriptions');
+            // 'find' busca um registro específico pelo ID no WatermelonDB
+            const row = await collection.find(id);
+            const category = await row.category.fetch();
+
+            return {
+                id: row.id,
+                serviceName: row.serviceName,
+                value: row.value,
+                currency: row.currency,
+                billingDate: row.billingDate,
+                isActive: row.isActive,
+                categoryId: row.categoryId,
+                categoryName: category.name,
+            };
+        } catch (error) {
+            console.error("Erro ao buscar assinatura:", error);
+            return null;
+        }
+    };
+
+    // Atualiza os dados de uma assinatura
+    // Aceita um objeto parcial apenas com os campos que você deseja alterar
+    const updateSubscription = async (id: string, dataToUpdate: { 
+        serviceName?: string; 
+        value?: number; 
+        currency?: string; 
+        billingDate?: number; 
+        categoryId?: string 
+    }) => {
+        try {
+            const collection = database.get<Subscription>('subscriptions');
+            
+            // Qualquer modificação no WatermelonDB DEVE estar dentro de um database.write()
+            await database.write(async () => {
+                const record = await collection.find(id);
+                
+                await record.update((subscription) => {
+                    // Atualiza o nome do serviço apenas se ele foi passado
+                    if (dataToUpdate.serviceName !== undefined) {
+                        subscription.serviceName = dataToUpdate.serviceName;
+                    }
+                    // Atualiza o valor apenas se ele foi passado
+                    if (dataToUpdate.value !== undefined) {
+                        subscription.value = dataToUpdate.value;
+                    }
+                    // Atualiza a moeda apenas se ela foi passada
+                    if (dataToUpdate.currency !== undefined) {
+                        subscription.currency = dataToUpdate.currency;
+                    }
+                    // Atualiza a data apenas se ela foi passada
+                    if (dataToUpdate.billingDate !== undefined) {
+                        subscription.billingDate = dataToUpdate.billingDate;
+                    }
+                    // Atualiza a categoria apenas se ela foi passada
+                    if (dataToUpdate.categoryId !== undefined) {
+                        subscription.categoryId = dataToUpdate.categoryId;
+                    }
+                });
+            });
+
+            await loadSubscriptions();
+        } catch (error) {
+            console.error("Erro ao atualizar a assinatura:", error);
+            throw error; // Joga o erro para a UI poder exibir um alerta
+        }
+    };
 
     // Derivação memoizada: só assinaturas ativas.
     // Importante: evita recalcular em toda render sem necessidade.
@@ -83,5 +189,8 @@ export function useSubscriptions() {
         items, // Lista completa.
         activeSubscriptions, // Lista filtrada para o dashboard.
         monthlyTotal, // Total mensal consolidado.
+        categories, // Lista de categorias disponíveis.
+        getSubscriptionById,
+        updateSubscription,
     };
 }
