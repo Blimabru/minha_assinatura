@@ -19,7 +19,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSubscriptionNotifications } from '../hooks/useSubscriptionNotifications';
-import { CreateSubscriptionDTO, Subscription, SubscriptionFrequency } from '../types/subscription';
+import { type CreateSubscriptionDTO, type Subscription, type SubscriptionFrequency } from '../types/subscription';
 
 interface SubscriptionFormExampleProps {
   onSubscriptionCreated?: (subscription: Subscription) => void;

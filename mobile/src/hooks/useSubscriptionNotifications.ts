@@ -1,4 +1,4 @@
-import * as Notifications from 'expo-notifications';
+import * as _Notifications from 'expo-notifications';
 import { useState, useCallback, useEffect } from 'react';
 import { subscriptionNotificationService } from '../services/SubscriptionNotificationService';
 
@@ -29,29 +29,6 @@ export const useSubscriptionNotifications = () => {
   });
 
   // Carregar notificações agendadas ao montar o hook
-  useEffect(() => {
-    loadScheduledNotifications();
-
-    // Listeners para quando notificação é recebida ou clicada
-    const unsubscribeReceived = subscriptionNotificationService.setupNotificationReceivedListener(
-      (notification) => {
-        console.log('Notificação recebida:', notification);
-      }
-    );
-
-    const unsubscribeResponse = subscriptionNotificationService.setupNotificationResponseListener(
-      (notification) => {
-        console.log('Notificação clicada:', notification);
-        // Aqui você pode navegar para uma tela específica ou executar uma ação
-      }
-    );
-
-    return () => {
-      unsubscribeReceived();
-      unsubscribeResponse();
-    };
-  }, []);
-
   const loadScheduledNotifications = useCallback(async () => {
     try {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
@@ -80,6 +57,30 @@ export const useSubscriptionNotifications = () => {
       }));
     }
   }, []);
+
+  // Carregar notificações e configurar listeners ao montar o hook
+  useEffect(() => {
+    loadScheduledNotifications();
+
+    // Listeners para quando notificação é recebida ou clicada
+    const unsubscribeReceived = subscriptionNotificationService.setupNotificationReceivedListener(
+      (notification) => {
+        console.log('Notificação recebida:', notification);
+      }
+    );
+
+    const unsubscribeResponse = subscriptionNotificationService.setupNotificationResponseListener(
+      (notification) => {
+        console.log('Notificação clicada:', notification);
+        // Aqui você pode navegar para uma tela específica ou executar uma ação
+      }
+    );
+
+    return () => {
+      unsubscribeReceived();
+      unsubscribeResponse();
+    };
+  }, [loadScheduledNotifications]);
 
   const scheduleAlert = useCallback(
     async (subscriptionName: string, expirationDate: Date, daysBeforeExpiration: number = 7) => {

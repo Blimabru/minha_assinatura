@@ -11,12 +11,7 @@ import {
 } from 'react-native';
 import { useAutoScheduleNotifications } from '../hooks/useAutoScheduleNotifications';
 
-interface CreateSubscriptionData {
-  serviceName: string;
-  price: number;
-  expirationDate: Date;
-  reminderDaysBefore: number;
-}
+// Tipos individuais são definidos através dos states separados abaixo
 
 /**
  * Componente que demonstra como integrar o sistema de notificações

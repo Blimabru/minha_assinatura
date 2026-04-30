@@ -21,8 +21,8 @@ export const SubscriptionExpirationAlert: React.FC<SubscriptionExpirationAlertPr
   visible,
   onDismiss,
 }) => {
-  const [testSubscriptionName, setTestSubscriptionName] = useState('Netflix');
-  const [testDaysBeforeExpiration, setTestDaysBeforeExpiration] = useState(7);
+  const [testSubscriptionName] = useState('Netflix');
+  const [testDaysBeforeExpiration] = useState(7);
   const {
     scheduledAlerts,
     isLoading,
