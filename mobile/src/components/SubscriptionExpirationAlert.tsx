@@ -42,7 +42,8 @@ export const SubscriptionExpirationAlert: React.FC<SubscriptionExpirationAlertPr
       await scheduleAlert(testSubscriptionName, expirationDate, testDaysBeforeExpiration);
 
       Alert.alert('Sucesso', `Notificação agendada para "${testSubscriptionName}"`);
-    } catch (_err) {
+    } catch (err) {
+      console.error(err);
       Alert.alert('Erro', 'Não foi possível agendar a notificação');
     }
   }, [testSubscriptionName, testDaysBeforeExpiration, scheduleAlert]);
@@ -52,7 +53,8 @@ export const SubscriptionExpirationAlert: React.FC<SubscriptionExpirationAlertPr
       try {
         await cancelAlert(alert.notificationId);
         Alert.alert('Sucesso', `Alerta cancelado para "${alert.subscriptionName}"`);
-      } catch (_err) {
+      } catch (err) {
+        console.error(err);
         Alert.alert('Erro', 'Não foi possível cancelar o alerta');
       }
     },
@@ -68,7 +70,8 @@ export const SubscriptionExpirationAlert: React.FC<SubscriptionExpirationAlertPr
           try {
             await clearAllAlerts();
             Alert.alert('Sucesso', 'Todas as notificações foram canceladas');
-          } catch (_err) {
+          } catch (err) {
+            console.error(err);
             Alert.alert('Erro', 'Não foi possível cancelar as notificações');
           }
         },

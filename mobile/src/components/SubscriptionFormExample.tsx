@@ -103,6 +103,7 @@ export const SubscriptionFormExample: React.FC<SubscriptionFormExampleProps> = (
       });
       setReminderDays('7');
     } catch (err) {
+      console.error(err);
       Alert.alert(
         'Erro',
         'Não foi possível criar a assinatura. Tente novamente.'

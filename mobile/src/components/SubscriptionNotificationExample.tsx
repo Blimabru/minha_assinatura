@@ -154,7 +154,7 @@ export const SubscriptionNotificationIntegration: React.FC = () => {
         <Text style={styles.infoTitle}>Como funciona:</Text>
         <Text style={styles.infoText}>
           1. Você preenche os dados da assinatura{'\n'}
-          2. Clica em "Cadastrar"{'\n'}
+          2. Clica em &quot;Cadastrar&quot;{'\'n'}
           3. Sistema salva no banco (simulado){'\n'}
           4. Notificação é agendada automaticamente{'\n'}
           5. No dia marcado, você recebe um lembrete
