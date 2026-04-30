@@ -13,16 +13,14 @@ import { useAutoScheduleNotifications } from '../hooks/useAutoScheduleNotificati
 
 // Tipos individuais são definidos através dos states separados abaixo
 
-/**
- * Componente que demonstra como integrar o sistema de notificações
- * ao cadastro de uma assinatura.
- * 
- * Fluxo:
- * 1. Usuário preenche dados da assinatura
- * 2. Sistema salva a assinatura no banco (não implementado aqui)
- * 3. Sistema chama scheduleForSubscription
- * 4. Notificação é agendada automaticamente
- */
+// Componente que demonstra como integrar o sistema de notificações
+// ao cadastro de uma assinatura.
+// 
+// Fluxo:
+// 1. Usuário preenche dados da assinatura
+// 2. Sistema salva a assinatura no banco (nao implementado aqui)
+// 3. Sistema chama scheduleForSubscription
+// 4. Notificação é agendada automaticamente
 export const SubscriptionNotificationIntegration: React.FC = () => {
   const [serviceName, setServiceName] = useState('Netflix');
   const [price, setPrice] = useState('34.90');

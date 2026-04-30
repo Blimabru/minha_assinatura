@@ -1,4 +1,3 @@
-import * as _Notifications from 'expo-notifications';
 import { useState, useCallback, useEffect } from 'react';
 import { subscriptionNotificationService } from '../services/SubscriptionNotificationService';
 
@@ -49,10 +48,10 @@ export const useSubscriptionNotifications = () => {
         scheduledAlerts: alerts,
         isLoading: false,
       }));
-    } catch (error) {
+    } catch (_error) {
       setState((prev) => ({
         ...prev,
-        error: `Erro ao carregar notificações: ${error}`,
+        error: `Erro ao carregar notificações: ${_error}`,
         isLoading: false,
       }));
     }
