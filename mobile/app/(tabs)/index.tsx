@@ -11,6 +11,14 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 // Componentes tematizados do projeto.
 import { Text, View } from '@/components/Themed';
 
+// Instância singleton do banco.
+import { database } from '@/database';
+
+// Models para tipagem das coleções.
+import User from '@/database/models/User';
+import Category from '@/database/models/Category';
+import Subscription from '@/database/models/Subscription';
+
 // Hook reativo que já alimenta a dashboard.
 import { useSubscriptions, type SubscriptionItem } from '@/database/hooks/useSubscriptions';
 
