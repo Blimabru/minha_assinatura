@@ -39,3 +39,14 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Whitelist dos módulos nativos customizados
+!android/
+!android/app/
+!android/app/src/
+!android/app/src/main/
+!android/app/src/main/java/
+!android/app/src/main/java/com/
+!android/app/src/main/java/com/anonymous/
+!android/app/src/main/java/com/anonymous/mobile/
+!android/app/src/main/java/com/anonymous/mobile/*.kt
