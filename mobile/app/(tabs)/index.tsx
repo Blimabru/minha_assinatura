@@ -1,12 +1,12 @@
-// Hook de estado para controlar loading do botão.
-import { useState } from 'react';
+// Router para navegação entre telas.
+import { useRouter } from 'expo-router';
 
 // Componentes nativos para botão, lista e estilos.
 import { Alert, FlatList, Pressable, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 
-// Q = helper de query do Watermelon (where, etc).
-import { Q } from '@nozbe/watermelondb';
+// Ícones para o botão.
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 // Componentes tematizados do projeto.
 import { Text, View } from '@/components/Themed';
@@ -27,6 +27,9 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 // Tela principal da aba Dashboard.
 export default function TabOneScreen() {
+  // Router para navegação.
+  const router = useRouter();
+
   // Dados derivados do banco (reativos).
   const { loading, activeSubscriptions, monthlyTotal, updateSubscription, categories } = useSubscriptions();
 
@@ -181,15 +184,13 @@ export default function TabOneScreen() {
 
       <Text style={styles.total}>Total mensal: R$ {monthlyTotal.toFixed(2)}</Text>
 
-      {/* Botão de create para validar fluxo local */}
+      {/* Botão principal: Adicionar Assinatura */}
       <Pressable
-        style={[styles.button, creating && styles.buttonDisabled]}
-        onPress={handleAddTestSubscription}
-        disabled={creating}
+        style={styles.addButton}
+        onPress={() => router.push('/subscriptions/create')}
       >
-        <Text style={styles.buttonText}>
-          {creating ? 'Criando...' : 'Adicionar assinatura de teste'}
-        </Text>
+        <FontAwesome name="plus" size={20} color="white" />
+        <Text style={styles.addButtonText}>Adicionar Assinatura</Text>
       </Pressable>
 
       {loading ? (
@@ -299,19 +300,20 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 12,
   },
-  button: {
+  addButton: {
     backgroundColor: '#0b7a5a',
     borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginBottom: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonText: {
+  addButtonText: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '700',
     textAlign: 'center',
   },
