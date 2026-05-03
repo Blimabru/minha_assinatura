@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import AppDatabaseProvider from '@/database/providers/DatabaseProvider';
+import BatteryOptimizationProvider from '@/components/BatteryOptimizationProvider';
 
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -52,6 +53,7 @@ function RootLayoutNav() {
   return (
     <AppDatabaseProvider>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <BatteryOptimizationProvider />
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
