@@ -26,6 +26,9 @@
       "package": "com.anonymous.mobile",
       "permissions": [
         "android.permission.SCHEDULE_EXACT_ALARM"
+        "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
+        "android.permission.ACCESS_NOTIFICATION_POLICY",
+        "android.permission.BATTERY_STATS"
       ]
     },
     "web": {
