@@ -1,9 +1,9 @@
 // Router para navegação entre telas.
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'expo-router';
 
 // Componentes nativos para botão, lista e estilos.
-import { Alert, FlatList, Pressable, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Modal, TouchableOpacity, TextInput, View as RNView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 
 // Componentes tematizados do projeto.
@@ -19,20 +19,34 @@ import Subscription from '@/database/models/Subscription';
 
 // Hook reativo que já alimenta a dashboard.
 import { useSubscriptions, type SubscriptionItem } from '@/database/hooks/useSubscriptions';
+import SearchBar from '@/components/UI/SearchBar';
+import { formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/utils/formatCurrency';
+import { useTopAlert } from '../../src/hooks/useTopAlert.tsx';
 
 // Ícones
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import CardItem from '@/components/UI/CardItem';
 
 // Tela principal da aba Dashboard.
 export default function TabOneScreen() {
   // Router para navegação.
   const router = useRouter();
+  const { TopAlert, showError, showSuccess } = useTopAlert();
 
   // Dados derivados do banco (reativos).
-  const { loading, activeSubscriptions, monthlyTotal, updateSubscription, categories } = useSubscriptions();
+  const { loading, items, activeSubscriptions, monthlyTotal, updateSubscription, categories } = useSubscriptions();
 
   // Estado para bloquear múltiplos cliques no botão de criar.
   const [creating, setCreating] = useState(false);
+
+  // Estados para busca/filtragem (movido de subscriptions.tsx)
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<'all' | 'active' | 'cancelled' | 'expired'>('all');
+
+  const filtered = useMemo(() => {
+    const base = filter === 'all' ? items : filter === 'active' ? items.filter(i => i.isActive) : items.filter(i => !i.isActive);
+    return base.filter(i => i.serviceName.toLowerCase().includes(query.toLowerCase()));
+  }, [items, filter, query]);
 
   // Estados para o modal de edição
   const [modalVisible, setModalVisible] = useState(false);
@@ -43,85 +57,13 @@ export default function TabOneScreen() {
   const [editBillingDate, setEditBillingDate] = useState('');
   const [editCategoryId, setEditCategoryId] = useState('');
 
-  // Função de teste para inserir dados locais.
-  // Importante: valida o fluxo offline-first ponta a ponta.
-  async function handleAddTestSubscription() {
-    // Evita toque duplo durante operação assíncrona.
-    if (creating) return;
-
-    setCreating(true);
-
-    try {
-      // Coleções tipadas para leitura/escrita.
-      const users = database.get<User>('users');
-      const categories = database.get<Category>('categories');
-      const subscriptions = database.get<Subscription>('subscriptions');
-
-      // Busca um usuário padrão por email.
-      let defaultUser = await users
-        .query(Q.where('email', 'usuario.local@minhaassinatura.app'))
-        .fetch();
-
-      // Busca uma categoria padrão por nome.
-      let defaultCategory = await categories
-        .query(Q.where('name', 'Streaming'))
-        .fetch();
-
-      // Todas as escritas no Watermelon precisam ocorrer dentro de database.write.
-      await database.write(async () => {
-        // Cria usuário padrão apenas se não existir.
-        if (defaultUser.length === 0) {
-          const createdUser = await users.create((user) => {
-            user.name = 'Usuario Local';
-            user.email = 'usuario.local@minhaassinatura.app';
-            user.passwordHash = 'local_dev_only';
-            user.currencyPreference = 'BRL';
-          });
-
-          // Atualiza variável local com usuário recém-criado.
-          defaultUser = [createdUser];
-        }
-
-        // Cria categoria padrão apenas se não existir.
-        if (defaultCategory.length === 0) {
-          const createdCategory = await categories.create((category) => {
-            category.name = 'Streaming';
-            category.icon = 'tv';
-          });
-
-          // Atualiza variável local com categoria recém-criada.
-          defaultCategory = [createdCategory];
-        }
-
-        // Cria assinatura de teste com timestamp para diferenciar nome.
-        await subscriptions.create((subscription) => {
-          subscription.userId = defaultUser[0].id;
-          subscription.categoryId = defaultCategory[0].id;
-          subscription.serviceName = `Netflix Teste ${Date.now()}`;
-          subscription.value = 39.9;
-          subscription.currency = 'BRL';
-          subscription.billingDate = 10;
-          subscription.isActive = true;
-        });
-      });
-
-      // Feedback de sucesso.
-      Alert.alert('Sucesso', 'Assinatura de teste criada no banco local.');
-    } catch (error) {
-      // Feedback de erro para diagnóstico rápido.
-      console.error(error);
-      Alert.alert('Erro', 'Não foi possível criar a assinatura de teste.');
-    } finally {
-      // Libera botão no fim da execução.
-      setCreating(false);
-    }
-  }
+  // Removido: função de inserção de dados de teste.
 
   // Função para abrir modal de edição
   function openEditModal(subscription: SubscriptionItem) {
     setSelectedSubscription(subscription);
     setEditServiceName(subscription.serviceName);
-    setEditValue(subscription.value.toString());
+    setEditValue(formatCurrencyInput(subscription.value.toFixed(2).replace('.', ',')));
     setEditCurrency(subscription.currency);
     setEditBillingDate(subscription.billingDate.toString());
     setEditCategoryId(subscription.categoryId);
@@ -132,31 +74,31 @@ export default function TabOneScreen() {
   async function handleSaveEdit() {
     if (!selectedSubscription) return;
 
-    const newValue = parseFloat(editValue);
+    const newValue = parseCurrencyStringToNumber(editValue);
     const newBillingDate = parseInt(editBillingDate);
 
     if (!editServiceName.trim()) {
-      Alert.alert('Erro', 'Nome do serviço é obrigatório.');
+      showError('Nome do serviço é obrigatório.');
       return;
     }
 
     if (isNaN(newValue) || newValue <= 0) {
-      Alert.alert('Erro', 'Valor deve ser um número positivo.');
+      showError('Valor deve ser um número positivo.');
       return;
     }
 
     if (!editCurrency.trim()) {
-      Alert.alert('Erro', 'Moeda é obrigatória.');
+      showError('Moeda é obrigatória.');
       return;
     }
 
     if (isNaN(newBillingDate) || newBillingDate < 1 || newBillingDate > 31) {
-      Alert.alert('Erro', 'Data de vencimento deve ser um dia válido (1-31).');
+      showError('Data de vencimento deve ser um dia válido (1-31).');
       return;
     }
 
     if (!editCategoryId) {
-      Alert.alert('Erro', 'Categoria é obrigatória.');
+      showError('Categoria é obrigatória.');
       return;
     }
 
@@ -168,50 +110,46 @@ export default function TabOneScreen() {
         billingDate: newBillingDate,
         categoryId: editCategoryId,
       });
-      Alert.alert('Sucesso', 'Assinatura atualizada com sucesso.');
+      showSuccess('Assinatura atualizada com sucesso.');
       setModalVisible(false);
     } catch (error) {
       console.error(error);
-      Alert.alert('Erro', 'Não foi possível salvar as alterações.');
+      showError('Não foi possível salvar as alterações.');
     }
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Dashboard</Text>
-
-      <Text style={styles.total}>Total mensal: R$ {monthlyTotal.toFixed(2)}</Text>
-
-      {/* Botão principal: Adicionar Assinatura */}
-      <Pressable
-        style={styles.addButton}
-        onPress={() => router.push('/subscriptions/create')}
-      >
-        <FontAwesome name="plus" size={20} color="white" />
-        <Text style={styles.addButtonText}>Adicionar Assinatura</Text>
-      </Pressable>
+      <TopAlert />
+      
+      {/* Search and filters (from Subscriptions screen) */}
+      <SearchBar value={query} onChange={setQuery} placeholder="Buscar assinaturas..." />
+      <View style={styles.filters}>
+        {['Todas','Ativas','Canceladas','Expiradas'].map((f, idx) => (
+          <Text key={f} onPress={() => setFilter(idx===0?'all':idx===1?'active':'cancelled')} style={[styles.filterItem, filter==='all' && idx===0?styles.filterActive:null]}>{f}</Text>
+        ))}
+      </View>
 
       {loading ? (
         <Text>Carregando assinaturas...</Text>
-      ) : activeSubscriptions.length === 0 ? (
-        <Text>Nenhuma assinatura ativa ainda.</Text>
+      ) : filtered.length === 0 ? (
+        <Text>Nenhuma assinatura encontrada.</Text>
       ) : (
         <FlatList
-          data={activeSubscriptions}
+          data={filtered}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           renderItem={({ item }) => (
-            <View style={styles.card}>
-              <View style={styles.cardContent}>
-                <Text style={styles.service}>{item.serviceName}</Text>
-                <Text>
-                  {item.currency} {item.value.toFixed(2)} - dia {item.billingDate}
-                </Text>
-              </View>
-              <TouchableOpacity onPress={() => openEditModal(item)} style={styles.editIcon}>
-                <FontAwesome name="edit" size={20} color="#007bff" />
-              </TouchableOpacity>
-            </View>
+            <CardItem
+              id={item.id}
+              serviceName={item.serviceName}
+              value={item.value}
+              currency={item.currency}
+              billingDate={item.billingDate}
+              isActive={item.isActive}
+              onPress={() => openEditModal(item)}
+              onEdit={() => openEditModal(item)}
+            />
           )}
         />
       )}
@@ -233,7 +171,7 @@ export default function TabOneScreen() {
               <TextInput
                 style={styles.input}
                 value={editValue}
-                onChangeText={setEditValue}
+                onChangeText={(t) => setEditValue(formatCurrencyInput(t))}
                 keyboardType="numeric"
                 placeholder="Ex: 39.90"
               />
@@ -298,6 +236,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 12,
   },
+  filters: { flexDirection: 'row', gap: 8, marginBottom: 12 },
+  filterItem: { padding: 8, backgroundColor: '#e9e9e9', borderRadius: 8, marginRight: 8 },
+  filterActive: { backgroundColor: '#ddd' },
+  cardsRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, flex: 1, marginRight: 8 },
+  cardLabel: { color: '#666', fontWeight: '600' },
+  cardValue: { fontSize: 20, fontWeight: '800', marginTop: 8 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', marginVertical: 12 },
+  chartPlaceholder: { backgroundColor: '#fff', borderRadius: 12, height: 200, justifyContent: 'center', alignItems: 'center' },
   addButton: {
     backgroundColor: '#0b7a5a',
     borderRadius: 10,
