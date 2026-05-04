@@ -99,6 +99,7 @@ export const SubscriptionNotificationIntegration: React.FC = () => {
           s.currency = 'BRL';
           s.billingDate = expirationDate.getDate();
           s.isActive = true;
+          s.status = 'active';
         });
 
         createdSubscriptionId = created.id;
