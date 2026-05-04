@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, FlatList, Modal, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Q } from '@nozbe/watermelondb';
 
 import { Text } from '@/components/Themed';
-import database from '@/database';
+import { database } from '@/database';
 import type User from '@/database/models/User';
 import type Category from '@/database/models/Category';
 import type Subscription from '@/database/models/Subscription';
@@ -12,13 +11,7 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 
 // Componentes de formulário (usando React Native nativo)
-import {
-  TouchableOpacity,
-  View as RNView,
-  FlatList,
-  Modal,
-  Pressable,
-} from 'react-native';
+import { View as RNView } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 // Tipo para dados do formulário
