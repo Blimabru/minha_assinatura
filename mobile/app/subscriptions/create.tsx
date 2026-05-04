@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, TouchableOpacity, FlatList, Modal, Pressable } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 
 import { Text } from '@/components/Themed';
@@ -11,6 +12,11 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/utils/formatCurrency';
 import { useTopAlert } from '../../src/hooks/useTopAlert.tsx';
+import {
+  buildSubscriptionDueDate,
+  SUBSCRIPTION_RECURRENCE_OPTIONS,
+  type SubscriptionRecurrence,
+} from '../../src/utils/subscriptionSchedule';
 
 // Componentes de formulário (usando React Native nativo)
 import { View as RNView } from 'react-native';
@@ -21,8 +27,11 @@ interface FormData {
   serviceName: string;
   value: string;
   currency: string;
-  billingDate: string;
   categoryId: string;
+  recurrence: SubscriptionRecurrence;
+  dueDay: string;
+  dueMonth: string;
+  dueYear: string;
 }
 
 // Tipo para categorias
@@ -33,7 +42,6 @@ interface CategoryItem {
 }
 
 const CURRENCIES = ['BRL', 'USD', 'EUR', 'GBP', 'JPY'];
-const BILLING_DATES = Array.from({ length: 31 }, (_, i) => i + 1);
 
 export default function CreateSubscriptionScreen() {
   const router = useRouter();
@@ -46,8 +54,11 @@ export default function CreateSubscriptionScreen() {
     serviceName: '',
     value: '',
     currency: 'BRL',
-    billingDate: '1',
     categoryId: '',
+    recurrence: 'mensal',
+    dueDay: String(new Date().getDate()).padStart(2, '0'),
+    dueMonth: String(new Date().getMonth() + 1).padStart(2, '0'),
+    dueYear: String(new Date().getFullYear()),
   });
 
   // Estados de UI
@@ -59,9 +70,6 @@ export default function CreateSubscriptionScreen() {
 
   // Modal para seletor de categoria
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
-
-  // Modal para seletor de data de cobrança
-  const [billingDateModalVisible, setBillingDateModalVisible] = useState(false);
 
   // Modal para seletor de moeda
   const [currencyModalVisible, setCurrencyModalVisible] = useState(false);
@@ -166,14 +174,14 @@ export default function CreateSubscriptionScreen() {
       return false;
     }
 
-    if (!formData.billingDate) {
-      showError('Data de cobrança é obrigatória.');
+    if (!formData.recurrence) {
+      showError('Recorrência é obrigatória.');
       return false;
     }
 
-    const billingDateNum = parseInt(formData.billingDate);
-    if (isNaN(billingDateNum) || billingDateNum < 1 || billingDateNum > 31) {
-      showError('A data deve estar entre 1 e 31.');
+    const dueDate = buildSubscriptionDueDate(formData.dueDay, formData.dueMonth, formData.dueYear);
+    if (!dueDate) {
+      showError('A data de vencimento deve ser válida.');
       return false;
     }
 
@@ -199,6 +207,12 @@ export default function CreateSubscriptionScreen() {
     setLoading(true);
 
     try {
+      const dueDate = buildSubscriptionDueDate(formData.dueDay, formData.dueMonth, formData.dueYear);
+      if (!dueDate) {
+        showError('A data de vencimento deve ser válida.');
+        return;
+      }
+
       const subscriptions = database.get<Subscription>('subscriptions');
 
       await database.write(async () => {
@@ -206,11 +220,13 @@ export default function CreateSubscriptionScreen() {
           subscription.serviceName = formData.serviceName.trim();
           subscription.value = parseCurrencyStringToNumber(formData.value);
           subscription.currency = formData.currency;
-          subscription.billingDate = parseInt(formData.billingDate);
+          subscription.billingDate = parseInt(formData.dueDay, 10);
           subscription.categoryId = formData.categoryId;
           subscription.userId = currentUserId;
           subscription.isActive = true;
           subscription.status = 'active';
+          subscription.recurrence = formData.recurrence;
+          subscription.dueDate = dueDate;
         });
       });
 
@@ -321,13 +337,60 @@ export default function CreateSubscriptionScreen() {
           () => setCurrencyModalVisible(true)
         )}
 
-        {/* Campo: Data de Cobrança */}
-        {renderSelector(
-          'Dia da Cobrança',
-          formData.billingDate,
-          'Selecione o dia',
-          () => setBillingDateModalVisible(true)
-        )}
+        {/* Campo: Recorrência */}
+        <RNView style={styles.fieldContainer}>
+          <Text style={styles.label}>Recorrência</Text>
+          <RNView style={[styles.pickerWrapper, { borderColor: colors.text, backgroundColor: colors.background }]}>
+            <Picker
+              selectedValue={formData.recurrence}
+              onValueChange={(itemValue: SubscriptionRecurrence) =>
+                setFormData((prev) => ({ ...prev, recurrence: itemValue }))
+              }
+              style={styles.inlinePicker}
+            >
+              {SUBSCRIPTION_RECURRENCE_OPTIONS.map((option) => (
+                <Picker.Item key={option.value} label={option.label} value={option.value} />
+              ))}
+            </Picker>
+          </RNView>
+        </RNView>
+
+        {/* Campo: Vencimento */}
+        <RNView style={styles.fieldContainer}>
+          <Text style={styles.label}>Vencimento (dia / mês / ano)</Text>
+          <RNView style={styles.dueDateRow}>
+            <TextInput
+              style={[styles.input, styles.dueDateInput, { color: colors.text, borderColor: colors.text }]}
+              placeholder="DD"
+              placeholderTextColor={colors.text}
+              value={formData.dueDay}
+              onChangeText={(text) => setFormData((prev) => ({ ...prev, dueDay: text }))}
+              keyboardType="numeric"
+              maxLength={2}
+              editable={!loading}
+            />
+            <TextInput
+              style={[styles.input, styles.dueDateInput, { color: colors.text, borderColor: colors.text }]}
+              placeholder="MM"
+              placeholderTextColor={colors.text}
+              value={formData.dueMonth}
+              onChangeText={(text) => setFormData((prev) => ({ ...prev, dueMonth: text }))}
+              keyboardType="numeric"
+              maxLength={2}
+              editable={!loading}
+            />
+            <TextInput
+              style={[styles.input, styles.dueDateYearInput, { color: colors.text, borderColor: colors.text }]}
+              placeholder="AAAA"
+              placeholderTextColor={colors.text}
+              value={formData.dueYear}
+              onChangeText={(text) => setFormData((prev) => ({ ...prev, dueYear: text }))}
+              keyboardType="numeric"
+              maxLength={4}
+              editable={!loading}
+            />
+          </RNView>
+        </RNView>
 
         {/* Campo: Categoria */}
         {renderSelector(
@@ -400,66 +463,6 @@ export default function CreateSubscriptionScreen() {
                   { backgroundColor: colors.tint },
                 ]}
                 onPress={() => setCurrencyModalVisible(false)}
-              >
-                <Text style={{ color: 'white' }}>Fechar</Text>
-              </Pressable>
-            </RNView>
-          </RNView>
-        </Modal>
-
-        {/* Modal de Seleção de Data de Cobrança */}
-        <Modal
-          transparent
-          visible={billingDateModalVisible}
-          onRequestClose={() => setBillingDateModalVisible(false)}
-        >
-          <RNView style={styles.modalOverlay}>
-            <RNView
-              style={[
-                styles.modalContent,
-                { backgroundColor: colors.background },
-              ]}
-            >
-              <Text style={styles.modalTitle}>Selecione o Dia da Cobrança</Text>
-              <FlatList
-                data={BILLING_DATES}
-                keyExtractor={(item) => item.toString()}
-                numColumns={6}
-                renderItem={({ item }) => (
-                  <Pressable
-                    style={[
-                      styles.datePickerItem,
-                      formData.billingDate === item.toString() && {
-                        backgroundColor: colors.tint,
-                      },
-                    ]}
-                    onPress={() => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        billingDate: item.toString(),
-                      }));
-                      setBillingDateModalVisible(false);
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color:
-                          formData.billingDate === item.toString()
-                            ? 'white'
-                            : colors.text,
-                      }}
-                    >
-                      {item}
-                    </Text>
-                  </Pressable>
-                )}
-              />
-              <Pressable
-                style={[
-                  styles.modalCloseButton,
-                  { backgroundColor: colors.tint },
-                ]}
-                onPress={() => setBillingDateModalVisible(false)}
               >
                 <Text style={{ color: 'white' }}>Fechar</Text>
               </Pressable>
@@ -562,6 +565,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 16,
   },
+  dueDateRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  dueDateInput: {
+    flex: 1,
+  },
+  dueDateYearInput: {
+    flex: 1.4,
+  },
   selectorButton: {
     borderWidth: 1,
     borderRadius: 8,
@@ -607,16 +620,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  datePickerItem: {
-    flex: 1,
-    aspectRatio: 1,
-    margin: 4,
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#ccc',
   },
   modalCloseButton: {
     marginTop: 16,

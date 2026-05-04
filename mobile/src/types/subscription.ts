@@ -7,6 +7,8 @@ export interface SubscriptionFrequency {
   interval: number; // para custom: número de dias
 }
 
+export type SubscriptionRecurrence = 'mensal' | 'trimestral' | 'semestral' | 'anual';
+
 export interface Subscription {
   id: string;
   name: string;
@@ -15,6 +17,8 @@ export interface Subscription {
   category?: string; // Categoria (ex: "Streaming", "Produtividade")
   price: number; // Valor em reais
   currency: 'BRL' | 'USD' | 'EUR';
+  recurrence: SubscriptionRecurrence;
+  dueDate?: string; // Data de vencimento no formato YYYY-MM-DD
   frequency: SubscriptionFrequency;
   startDate: Date;
   expirationDate: Date; // Data de renovação/vencimento
@@ -47,6 +51,8 @@ export interface CreateSubscriptionDTO {
   category?: string;
   price: number;
   currency: 'BRL' | 'USD' | 'EUR';
+  recurrence: SubscriptionRecurrence;
+  dueDate?: string;
   frequency: SubscriptionFrequency;
   startDate: Date;
   expirationDate: Date;
@@ -62,6 +68,8 @@ export interface UpdateSubscriptionDTO {
   serviceName?: string;
   category?: string;
   price?: number;
+  recurrence?: SubscriptionRecurrence;
+  dueDate?: string;
   frequency?: SubscriptionFrequency;
   expirationDate?: Date;
   paymentMethod?: string;
