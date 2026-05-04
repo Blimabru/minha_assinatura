@@ -10,6 +10,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useAutoScheduleNotifications } from '../hooks/useAutoScheduleNotifications';
+import database from '@/database';
+import type User from '@/database/models/User';
+import type Category from '@/database/models/Category';
+import type SubscriptionModel from '@/database/models/Subscription';
 
 // Tipos individuais são definidos através dos states separados abaixo
 
@@ -53,9 +57,55 @@ export const SubscriptionNotificationIntegration: React.FC = () => {
       const expirationDate = new Date();
       expirationDate.setDate(expirationDate.getDate() + expDays);
 
-      // Criar objeto de assinatura (como seria salvo no banco)
+      // Persistir assinatura no WatermelonDB
+      const users = database.get<User>('users');
+      const categories = database.get<Category>('categories');
+      const subscriptions = database.get<SubscriptionModel>('subscriptions');
+
+      // Garante usuário padrão
+      let userList = await users.query().fetch();
+      if (userList.length === 0) {
+        await database.write(async () => {
+          const createdUser = await users.create((user) => {
+            (user as any).name = 'Usuario Local';
+            (user as any).email = 'usuario.local@minhaassinatura.app';
+            (user as any).password_hash = 'local_dev_only';
+            (user as any).currency_preference = 'BRL';
+          });
+          userList = [createdUser];
+        });
+      }
+
+      // Garante categoria
+      let categoryList = await categories.query().fetch();
+      if (categoryList.length === 0) {
+        await database.write(async () => {
+          const createdCat = await categories.create((cat) => {
+            (cat as any).name = 'Outros';
+            (cat as any).icon = 'ellipsis-h';
+          });
+          categoryList = [createdCat];
+        });
+      }
+
+      let createdSubscriptionId: string | null = null;
+
+      await database.write(async () => {
+        const created = await subscriptions.create((s) => {
+          s.userId = userList[0].id;
+          s.categoryId = categoryList[0].id;
+          s.serviceName = serviceName.trim();
+          s.value = priceNum;
+          s.currency = 'BRL';
+          s.billingDate = expirationDate.getDate();
+          s.isActive = true;
+        });
+
+        createdSubscriptionId = created.id;
+      });
+
       const subscription = {
-        id: `sub-${Date.now()}`,
+        id: createdSubscriptionId || `sub-${Date.now()}`,
         serviceName: serviceName.trim(),
         price: priceNum,
         expirationDate,
@@ -66,12 +116,21 @@ export const SubscriptionNotificationIntegration: React.FC = () => {
       // PASSO CRÍTICO: Agendar notificação ao criar assinatura
       const notificationId = await scheduleForSubscription(subscription);
 
-      // Aqui você salvaria a assinatura no banco com o notificationId
+      // Salvar notificationId no record do WatermelonDB
+      if (createdSubscriptionId && notificationId) {
+        const subscriptionsCol = database.get<SubscriptionModel>('subscriptions');
+        await database.write(async () => {
+          const rec = await subscriptionsCol.find(createdSubscriptionId as string);
+          await rec.update((r: any) => {
+            r.notificationId = notificationId;
+          });
+        });
+      }
+
       console.log('Assinatura criada com notificação:', {
         ...subscription,
         notificationId,
       });
-
       Alert.alert(
         'Sucesso',
         `Assinatura "${serviceName}" criada!\n\nNotificação agendada para:\n${new Date(expirationDate.getTime() - remDays * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}`

@@ -19,6 +19,10 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSubscriptionNotifications } from '../hooks/useSubscriptionNotifications';
+import database from '@/database';
+import type User from '@/database/models/User';
+import type Category from '@/database/models/Category';
+import type SubscriptionModel from '@/database/models/Subscription';
 import { type CreateSubscriptionDTO, type Subscription, type SubscriptionFrequency } from '../types/subscription';
 
 interface SubscriptionFormExampleProps {
@@ -53,38 +57,81 @@ export const SubscriptionFormExample: React.FC<SubscriptionFormExampleProps> = (
         return;
       }
 
-      // Criar objeto de assinatura
-      const subscription: Subscription = {
-        id: `sub-${Date.now()}`,
-        name: formData.name,
-        description: formData.description,
-        serviceName: formData.serviceName,
-        price: formData.price,
-        currency: formData.currency,
-        frequency: formData.frequency,
-        startDate: formData.startDate,
-        expirationDate: formData.expirationDate,
-        isActive: true,
-        notificationEnabled: true,
-        reminderDaysBefore: parseInt(reminderDays, 10),
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+      // Persistir assinatura no WatermelonDB
+      const users = database.get<User>('users');
+      const categories = database.get<Category>('categories');
+      const subscriptions = database.get<SubscriptionModel>('subscriptions');
 
-      // Agendar notificação de vencimento
+      // Garante usuário padrão
+      let userList = await users.query().fetch();
+      if (userList.length === 0) {
+        await database.write(async () => {
+          const createdUser = await users.create((user) => {
+            // Campos mínimos esperados pelo model
+            (user as any).name = 'Usuario Local';
+            (user as any).email = 'usuario.local@minhaassinatura.app';
+            (user as any).password_hash = 'local_dev_only';
+            (user as any).currency_preference = 'BRL';
+          });
+          userList = [createdUser];
+        });
+      }
+
+      // Garante categoria (usa primeira disponível ou cria "Outros")
+      let categoryList = await categories.query().fetch();
+      if (categoryList.length === 0) {
+        await database.write(async () => {
+          const createdCat = await categories.create((cat) => {
+            (cat as any).name = 'Outros';
+            (cat as any).icon = 'ellipsis-h';
+          });
+          categoryList = [createdCat];
+        });
+      }
+
+      let createdSubscriptionId: string | null = null;
+
+      await database.write(async () => {
+        const created = await subscriptions.create((s) => {
+          s.userId = userList[0].id;
+          s.categoryId = categoryList[0].id;
+          s.serviceName = formData.serviceName;
+          s.value = formData.price;
+          s.currency = formData.currency;
+          // usa dia do mês da data de expiração como billing_date
+          s.billingDate = formData.expirationDate.getDate();
+          s.isActive = true;
+        });
+
+        createdSubscriptionId = created.id;
+      });
+
+      // Agendar notificação de vencimento (hook gerencia o estado das notificações)
       const notificationId = await scheduleAlert(
         formData.serviceName,
         formData.expirationDate,
         parseInt(reminderDays, 10)
       );
 
-      subscription.notificationId = notificationId;
+      // Salvar notificationId no registro criado
+      if (createdSubscriptionId && notificationId) {
+        const subscriptionsCol = database.get<SubscriptionModel>('subscriptions');
+        await database.write(async () => {
+          const rec = await subscriptionsCol.find(createdSubscriptionId as string);
+          await rec.update((r: any) => {
+            r.notificationId = notificationId;
+          });
+        });
+      }
 
-      // Persistir assinatura (você faria isso em um banco de dados)
-      console.log('Assinatura criada:', subscription);
-
-      // Callback
-      onSubscriptionCreated?.(subscription);
+      // Callback com dados simplificados (id do registro recém-criado)
+      onSubscriptionCreated?.({
+        id: createdSubscriptionId || `sub-${Date.now()}`,
+        serviceName: formData.serviceName,
+        price: formData.price,
+        currency: formData.currency,
+        expirationDate: formData.expirationDate,
+      } as any);
 
       Alert.alert(
         'Sucesso',
