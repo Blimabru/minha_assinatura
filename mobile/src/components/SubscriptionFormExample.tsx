@@ -19,7 +19,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSubscriptionNotifications } from '../hooks/useSubscriptionNotifications';
-import database from '@/database';
+import { database } from '@/database';
 import type User from '@/database/models/User';
 import type Category from '@/database/models/Category';
 import type SubscriptionModel from '@/database/models/Subscription';
