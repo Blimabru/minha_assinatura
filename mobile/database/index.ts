@@ -5,6 +5,7 @@ import { Database } from '@nozbe/watermelondb';
 // Adapter SQLite para React Native.
 // Ele faz a ponte entre WatermelonDB e o SQLite nativo do dispositivo.
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
+import { migrations } from './migrations';
 
 // Schema define estrutura física das tabelas e colunas.
 import { schema } from './schema';
@@ -24,6 +25,8 @@ const modelClasses = [User, Category, Subscription];
 const adapter = new SQLiteAdapter({
   // Contrato das tabelas/colunas usado na criação e validação do banco.
   schema,
+  // Migrações para evoluir o schema existente sem perder dados.
+  migrations,
 
   // Nome físico do banco no storage do app.
   // Se mudar este nome, você cria outro banco (vazio) em paralelo.
