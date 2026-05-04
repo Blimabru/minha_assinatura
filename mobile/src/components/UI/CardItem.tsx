@@ -12,7 +12,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import Badge from '@/components/UI/Badge';
+import Badge from './Badge';
 
 interface Props {
   id: string;
