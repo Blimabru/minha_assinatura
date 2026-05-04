@@ -1,12 +1,10 @@
 // Router para navegação entre telas.
+import React, { useState } from 'react';
 import { useRouter } from 'expo-router';
 
 // Componentes nativos para botão, lista e estilos.
 import { Alert, FlatList, Pressable, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
-
-// Ícones para o botão.
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 // Componentes tematizados do projeto.
 import { Text, View } from '@/components/Themed';
