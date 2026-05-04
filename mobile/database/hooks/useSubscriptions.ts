@@ -235,12 +235,19 @@ export function useSubscriptions() {
         [activeSubscriptions]
     );
 
+    // Soma de todos os gastos cadastrados, independentemente do status.
+    const totalExpenses = useMemo(
+        () => items.reduce((acc, item) => acc + Number(item.value || 0), 0),
+        [items]
+    );
+
     // Retorno do hook para consumo da tela.
     return {
         loading, // Permite mostrar "carregando" no início.
         items, // Lista completa.
         activeSubscriptions, // Lista filtrada para o dashboard.
         monthlyTotal, // Total mensal consolidado.
+        totalExpenses, // Soma geral de todos os gastos.
         categories, // Lista de categorias disponíveis.
         getSubscriptionById,
         updateSubscription,

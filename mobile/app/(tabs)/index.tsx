@@ -11,7 +11,7 @@ import { Text, View } from '@/components/Themed';
 // Hook reativo que já alimenta a dashboard.
 import { useSubscriptions, type SubscriptionItem, type SubscriptionStatus } from '@/database/hooks/useSubscriptions';
 import SearchBar from '../../src/components/UI/SearchBar';
-import { formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/utils/formatCurrency';
+import { formatCurrencyByCode, formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/utils/formatCurrency';
 import { useTopAlert } from '../../src/hooks/useTopAlert';
 
 // Ícones
@@ -22,7 +22,7 @@ export default function TabOneScreen() {
   const { TopAlert, showError, showSuccess } = useTopAlert();
 
   // Dados derivados do banco (reativos).
-  const { loading, items, activeSubscriptions, monthlyTotal, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
+  const { loading, items, activeSubscriptions, monthlyTotal, totalExpenses, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
 
   // Estados para busca/filtragem (movido de subscriptions.tsx)
   const [query, setQuery] = useState('');
@@ -37,6 +37,35 @@ export default function TabOneScreen() {
           : items.filter((i) => i.status === filter);
     return base.filter(i => i.serviceName.toLowerCase().includes(query.toLowerCase()));
   }, [items, filter, query]);
+
+  const expenseSummary = useMemo(() => {
+    return items.reduce(
+      (acc, item) => {
+        acc[item.status] = (acc[item.status] || 0) + item.value;
+        return acc;
+      },
+      { active: 0, inactive: 0, cancelled: 0 } as Record<SubscriptionStatus, number>
+    );
+  }, [items]);
+
+  const totalSubscriptionsCount = items.length;
+  const activeSubscriptionsCount = activeSubscriptions.length;
+
+  const chartData = useMemo(() => {
+    const entries = [
+      { key: 'active' as const, label: 'Ativas', color: '#0b7a5a' },
+      { key: 'inactive' as const, label: 'Inativas', color: '#d97706' },
+      { key: 'cancelled' as const, label: 'Canceladas', color: '#dc2626' },
+    ];
+
+    const maxValue = Math.max(...entries.map((entry) => expenseSummary[entry.key]), 1);
+
+    return entries.map((entry) => ({
+      ...entry,
+      value: expenseSummary[entry.key],
+      width: `${Math.max((expenseSummary[entry.key] / maxValue) * 100, 8)}%` as `${number}%`,
+    }));
+  }, [expenseSummary]);
 
   // Estados para o modal de edição
   const [modalVisible, setModalVisible] = useState(false);
@@ -158,51 +187,88 @@ export default function TabOneScreen() {
 
   return (
     <View style={styles.container}>
-      <TopAlert />
-      
-      {/* Search and filters (from Subscriptions screen) */}
-      <SearchBar value={query} onChange={setQuery} placeholder="Buscar assinaturas..." />
-      <View style={styles.filters}>
-        {[
-          { label: 'Todas', value: 'all' },
-          { label: 'Ativas', value: 'active' },
-          { label: 'Inativas', value: 'inactive' },
-          { label: 'Canceladas', value: 'cancelled' },
-        ].map((item) => (
-          <Text
-            key={item.value}
-            onPress={() => setFilter(item.value as 'all' | 'active' | 'inactive' | 'cancelled')}
-            style={[styles.filterItem, filter === item.value ? styles.filterActive : null]}
-          >
-            {item.label}
-          </Text>
-        ))}
-      </View>
+      <FlatList
+        data={filtered}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContainer}
+        ListHeaderComponent={(
+          <>
+            <TopAlert />
 
-      {loading ? (
-        <Text>Carregando assinaturas...</Text>
-      ) : filtered.length === 0 ? (
-        <Text>Nenhuma assinatura encontrada.</Text>
-      ) : (
-        <FlatList
-          data={filtered}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          renderItem={({ item }) => (
-            <CardItem
-              id={item.id}
-              serviceName={item.serviceName}
-              iconName={item.categoryIcon}
-              value={item.value}
-              currency={item.currency}
-              billingDate={item.billingDate}
-              status={item.status}
-              onPress={() => openEditModal(item)}
-              onMenuPress={() => openActionMenu(item)}
-            />
-          )}
-        />
-      )}
+            <View style={styles.summaryGrid}>
+              <View style={[styles.summaryCard, styles.summaryCardPrimary]}>
+                <Text style={styles.summaryLabel}>Gasto total</Text>
+                <Text style={styles.summaryValue}>{formatCurrencyByCode(totalExpenses, 'BRL')}</Text>
+                <Text style={styles.summaryHint}>Somando todas as assinaturas</Text>
+              </View>
+
+              <View style={styles.summaryRow}>
+                <View style={styles.summaryMiniCard}>
+                  <Text style={styles.summaryLabel}>Ativas</Text>
+                  <Text style={styles.summaryMiniValue}>{formatCurrencyByCode(expenseSummary.active, 'BRL')}</Text>
+                </View>
+                <View style={styles.summaryMiniCard}>
+                  <Text style={styles.summaryLabel}>Canceladas</Text>
+                  <Text style={styles.summaryMiniValue}>{formatCurrencyByCode(expenseSummary.cancelled, 'BRL')}</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.chartSection}>
+              <Text style={styles.sectionTitle}>Distribuição dos gastos</Text>
+              <View style={styles.chartCard}>
+                {chartData.map((item) => (
+                  <View key={item.key} style={styles.chartItem}>
+                    <View style={styles.chartHeader}>
+                      <Text style={styles.chartLabel}>{item.label}</Text>
+                      <Text style={styles.chartValue}>{formatCurrencyByCode(item.value, 'BRL')}</Text>
+                    </View>
+                    <View style={styles.chartTrack}>
+                      <View style={[styles.chartFill, { width: item.width, backgroundColor: item.color }]} />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            <SearchBar value={query} onChange={setQuery} placeholder="Buscar assinaturas..." />
+            <View style={styles.filters}>
+              {[
+                { label: 'Todas', value: 'all' },
+                { label: 'Ativas', value: 'active' },
+                { label: 'Inativas', value: 'inactive' },
+                { label: 'Canceladas', value: 'cancelled' },
+              ].map((item) => (
+                <Text
+                  key={item.value}
+                  onPress={() => setFilter(item.value as 'all' | 'active' | 'inactive' | 'cancelled')}
+                  style={[styles.filterItem, filter === item.value ? styles.filterActive : null]}
+                >
+                  {item.label}
+                </Text>
+              ))}
+            </View>
+          </>
+        )}
+        ListEmptyComponent={(
+          <Text style={styles.emptyMessage}>
+            {loading ? 'Carregando assinaturas...' : 'Nenhuma assinatura encontrada.'}
+          </Text>
+        )}
+        renderItem={({ item }) => (
+          <CardItem
+            id={item.id}
+            serviceName={item.serviceName}
+            iconName={item.categoryIcon}
+            value={item.value}
+            currency={item.currency}
+            billingDate={item.billingDate}
+            status={item.status}
+            onPress={() => openEditModal(item)}
+            onMenuPress={() => openActionMenu(item)}
+          />
+        )}
+      />
 
       <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={closeActionMenu}>
         <Pressable style={styles.menuOverlay} onPress={closeActionMenu}>
@@ -314,6 +380,100 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+  listContainer: {
+    paddingBottom: 32,
+    gap: 6,
+  },
+  summaryGrid: {
+    gap: 12,
+    marginBottom: 16,
+  },
+  summaryCard: {
+    backgroundColor: '#0f172a',
+    borderRadius: 18,
+    padding: 18,
+  },
+  summaryCardPrimary: {
+    shadowColor: '#000',
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    elevation: 3,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  summaryMiniCard: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#ececec',
+  },
+  summaryLabel: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  summaryValue: {
+    marginTop: 8,
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  summaryMiniValue: {
+    marginTop: 8,
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#111',
+  },
+  summaryHint: {
+    marginTop: 6,
+    color: '#cbd5e1',
+    fontSize: 12,
+  },
+  chartSection: {
+    marginBottom: 16,
+  },
+  chartCard: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#ececec',
+    gap: 14,
+  },
+  chartItem: {
+    gap: 8,
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  chartLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111',
+  },
+  chartValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  chartTrack: {
+    height: 10,
+    borderRadius: 999,
+    backgroundColor: '#e2e8f0',
+    overflow: 'hidden',
+  },
+  chartFill: {
+    height: '100%',
+    borderRadius: 999,
+  },
   title: {
     fontSize: 24,
     fontWeight: '700',
@@ -352,6 +512,10 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: 12,
+  },
+  emptyMessage: {
+    marginTop: 12,
+    color: '#666',
   },
   menuOverlay: {
     flex: 1,
