@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { ScrollView, StyleSheet, TextInput, View, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Q } from '@nozbe/watermelondb';
 
@@ -10,6 +10,8 @@ import type Category from '@/database/models/Category';
 import type Subscription from '@/database/models/Subscription';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import { formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/utils/formatCurrency';
+import { useTopAlert } from '../../src/hooks/useTopAlert.tsx';
 
 // Componentes de formulário (usando React Native nativo)
 import {
@@ -44,6 +46,7 @@ export default function CreateSubscriptionScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { TopAlert, showError, showSuccess } = useTopAlert();
 
   // Estados do formulário
   const [formData, setFormData] = useState<FormData>({
@@ -58,6 +61,8 @@ export default function CreateSubscriptionScreen() {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+
+
 
   // Modal para seletor de categoria
   const [categoryModalVisible, setCategoryModalVisible] = useState(false);
@@ -141,46 +146,46 @@ export default function CreateSubscriptionScreen() {
       }
     } catch (error) {
       console.error('Erro ao carregar categorias:', error);
-      Alert.alert('Erro', 'Não foi possível carregar as categorias.');
+      showError('Não foi possível carregar as categorias.');
     }
   }
 
   // Validar campos obrigatórios
   function validateForm(): boolean {
     if (!formData.serviceName.trim()) {
-      Alert.alert('Validação', 'Nome do serviço é obrigatório.');
+      showError('Nome do serviço é obrigatório.');
       return false;
     }
 
     if (!formData.value.trim()) {
-      Alert.alert('Validação', 'Valor é obrigatório.');
+      showError('Valor é obrigatório.');
       return false;
     }
 
-    const valueNum = parseFloat(formData.value);
+    const valueNum = parseCurrencyStringToNumber(formData.value);
     if (isNaN(valueNum) || valueNum <= 0) {
-      Alert.alert('Validação', 'Valor deve ser um número positivo.');
+      showError('Valor deve ser um número positivo.');
       return false;
     }
 
     if (!formData.currency) {
-      Alert.alert('Validação', 'Moeda é obrigatória.');
+      showError('Moeda é obrigatória.');
       return false;
     }
 
     if (!formData.billingDate) {
-      Alert.alert('Validação', 'Data de cobrança é obrigatória.');
+      showError('Data de cobrança é obrigatória.');
       return false;
     }
 
     const billingDateNum = parseInt(formData.billingDate);
     if (isNaN(billingDateNum) || billingDateNum < 1 || billingDateNum > 31) {
-      Alert.alert('Validação', 'A data deve estar entre 1 e 31.');
+      showError('A data deve estar entre 1 e 31.');
       return false;
     }
 
     if (!formData.categoryId) {
-      Alert.alert('Validação', 'Categoria é obrigatória.');
+      showError('Categoria é obrigatória.');
       return false;
     }
 
@@ -194,7 +199,7 @@ export default function CreateSubscriptionScreen() {
     }
 
     if (!currentUserId) {
-      Alert.alert('Erro', 'Usuário não identificado.');
+      showError('Usuário não identificado.');
       return;
     }
 
@@ -206,7 +211,7 @@ export default function CreateSubscriptionScreen() {
       await database.write(async () => {
         await subscriptions.create((subscription) => {
           subscription.serviceName = formData.serviceName.trim();
-          subscription.value = parseFloat(formData.value);
+          subscription.value = parseCurrencyStringToNumber(formData.value);
           subscription.currency = formData.currency;
           subscription.billingDate = parseInt(formData.billingDate);
           subscription.categoryId = formData.categoryId;
@@ -215,18 +220,14 @@ export default function CreateSubscriptionScreen() {
         });
       });
 
-      Alert.alert('Sucesso', 'Assinatura cadastrada com sucesso!', [
-        {
-          text: 'OK',
-          onPress: () => {
-            // Redireciona para o dashboard
-            router.back();
-          },
-        },
-      ]);
+      // Mostra notificação de sucesso (top) e volta após 2.5s
+      showSuccess('Assinatura cadastrada com sucesso!');
+      setTimeout(() => {
+        router.back();
+      }, 2500);
     } catch (error) {
       console.error('Erro ao salvar assinatura:', error);
-      Alert.alert('Erro', 'Não foi possível salvar a assinatura.');
+      showError('Não foi possível salvar a assinatura.');
     } finally {
       setLoading(false);
     }
@@ -258,6 +259,8 @@ export default function CreateSubscriptionScreen() {
       </RNView>
     );
   }
+
+
 
   // Renderizar seletor (categoria, moeda, data)
   function renderSelector(
@@ -293,6 +296,8 @@ export default function CreateSubscriptionScreen() {
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
+      {/* Top notifications */}
+      <TopAlert />
       <RNView style={styles.content}>
         <Text style={styles.title}>Adicionar Nova Assinatura</Text>
 
@@ -309,9 +314,9 @@ export default function CreateSubscriptionScreen() {
         {renderTextField(
           'Valor',
           formData.value,
-          (text) => setFormData((prev) => ({ ...prev, value: text })),
-          '0.00',
-          'decimal-pad'
+          (text) => setFormData((prev) => ({ ...prev, value: formatCurrencyInput(text) })),
+          '0,00',
+          'numeric'
         )}
 
         {/* Campo: Moeda */}
@@ -625,4 +630,5 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
+
 });
