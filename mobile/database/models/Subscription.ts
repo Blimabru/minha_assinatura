@@ -34,6 +34,16 @@ export default class Subscription extends Model {
   @text('currency') currency!: string; // BRL, USD...
   @field('billing_date') billingDate!: number; // Dia da cobrança (1-31)
   @field('is_active') isActive!: boolean; // Ativa/cancelada
+  @text('notification_id') notificationId!: string;
+
+  /*
+    Comentários (pt-br):
+    - `notificationId` guarda o identificador retornado pelo sistema de notificações
+      (ex.: Expo Notifications). Isso permite cancelar ou atualizar o agendamento
+      associado a uma assinatura específica.
+    - Importante: se você migrar registros existentes, considere que este campo
+      pode ser vazio/null para dados antigos.
+  */
 
   // Atalhos de relação para navegar entre tabelas.
   @relation('users', 'user_id') user!: Relation<User>;

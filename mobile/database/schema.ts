@@ -3,10 +3,21 @@ import { appSchema, tableSchema } from '@nozbe/watermelondb';
 
 // Schema = contrato estrutural do banco local.
 // Tudo que existe no banco precisa estar definido aqui.
+/*
+  schema.ts
+  Definição do schema do WatermelonDB em um único lugar.
+
+  Comentários (pt-br):
+  - O `schema` descreve todas as tabelas e colunas usadas pelo app.
+  - Ao modificar este arquivo (ex.: adicionar `notification_id`) é necessário
+    planejar uma migração ou limpar o banco durante desenvolvimento.
+  - Versão do schema deve ser incrementada quando colunas/tabelas mudarem.
+*/
 export const schema = appSchema({
   // Versão do schema.
   // Sempre aumente quando alterar tabelas/colunas (com migração correspondente).
-  version: 1,
+  // Atualizado para 2 após adição de `notification_id` em subscriptions.
+  version: 2,
 
   // Lista de tabelas do banco.
   tables: [
@@ -59,6 +70,8 @@ export const schema = appSchema({
         // Metadados para auditoria/sincronização futura.
         { name: 'created_at', type: 'number' }, // Criação local.
         { name: 'updated_at', type: 'number' }, // Última alteração local.
+        // ID da notificação agendada (opcional)
+        { name: 'notification_id', type: 'string' },
       ],
     }),
   ],
