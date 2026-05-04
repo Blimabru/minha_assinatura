@@ -1,7 +1,7 @@
 import React from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
+import { Link, Tabs, useRouter } from 'expo-router';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -17,43 +17,75 @@ function TabBarIcon(props: {
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-
+  const colors = Colors[colorScheme ?? 'light'];
+  const router = useRouter();
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
+        tabBarActiveTintColor: colors.tint,
         headerShown: useClientOnlyValue(false, true),
+        tabBarShowLabel: true,
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tab One',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
+          title: 'Início',
+          tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+        }}
+      />
+
+      {/* subscriptions tab removed */}
+
+      <Tabs.Screen
+        name="create"
+        options={{
+          title: 'Adicionar',
+          tabBarIcon: ({ color }) => <TabBarIcon name="plus" color="#fff" />,
+          tabBarButton: (props) => (
+            <View style={styles.fabContainer}>
+              <Pressable
+                onPress={() => router.push('/subscriptions/create')}
+                style={({ pressed }) => [
+                  styles.fab,
+                  { opacity: pressed ? 0.85 : 1, backgroundColor: colors.tint },
+                ]}
+              >
+                <FontAwesome name="plus" size={22} color="#fff" />
               </Pressable>
-            </Link>
+            </View>
           ),
         }}
       />
+
+      {/* reports tab removed: content moved to index */}
+
       <Tabs.Screen
-        name="two"
+        name="settings"
         options={{
-          title: 'Tab Two',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+          title: 'Configurações',
+          tabBarIcon: ({ color }) => <TabBarIcon name="cog" color={color} />,
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  fabContainer: {
+    top: -18,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fab: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+});
