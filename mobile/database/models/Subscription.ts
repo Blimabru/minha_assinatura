@@ -35,6 +35,8 @@ export default class Subscription extends Model {
   @field('billing_date') billingDate!: number; // Dia da cobrança (1-31)
   @field('is_active') isActive!: boolean; // Ativa/cancelada
   @text('status') status!: string; // active, inactive ou cancelled
+  @text('recurrence') recurrence!: string; // mensal, trimestral, semestral, anual
+  @text('due_date') dueDate!: string; // YYYY-MM-DD
   @text('notification_id') notificationId!: string;
 
   /*

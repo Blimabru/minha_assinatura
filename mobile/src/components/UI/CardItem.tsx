@@ -15,6 +15,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Badge from './Badge';
 import { formatCurrencyByCode } from '../../utils/formatCurrency';
 import type { SubscriptionStatus } from '@/database/hooks/useSubscriptions';
+import { formatSubscriptionDueDate, getSubscriptionRecurrenceLabel } from '../../utils/subscriptionSchedule';
 
 interface Props {
   id: string;
@@ -24,14 +25,17 @@ interface Props {
   currency: string;
   billingDate: number;
   status: SubscriptionStatus;
+  recurrence: string;
+  dueDate?: string;
   onPress?: () => void;
   onMenuPress?: () => void;
 }
 
-export const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', value, currency, billingDate, status, onPress, onMenuPress }) => {
+export const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', value, currency, billingDate, status, recurrence, dueDate, onPress, onMenuPress }) => {
   const formattedValue = formatCurrencyByCode(value, currency);
   const badgeText = status === 'inactive' ? 'Inativa' : status === 'cancelled' ? 'Cancelada' : '';
   const badgeColor = status === 'inactive' ? '#FFF4CC' : '#FFCDD2';
+  const scheduleLabel = `${getSubscriptionRecurrenceLabel(recurrence)} • ${formatSubscriptionDueDate(dueDate, billingDate)}`;
 
   // Componente visual que aplica o layout do design: ícone + texto + ações
   return (
@@ -42,7 +46,7 @@ export const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', val
         </View>
         <View style={styles.info}>
           <Text style={styles.title}>{serviceName}</Text>
-          <Text style={styles.subtitle}>Mensal</Text>
+          <Text style={styles.subtitle}>{scheduleLabel}</Text>
           <Text style={styles.price}>{formattedValue}</Text>
         </View>
       </View>
