@@ -8,6 +8,9 @@ import database from '@/database';
 // Tipo do model Subscription para dar segurança de tipos nas queries.
 import Subscription from '@/database/models/Subscription';
 import Category from '@/database/models/Category';
+import { subscriptionNotificationService } from '@/src/services/SubscriptionNotificationService';
+
+export type SubscriptionStatus = 'active' | 'inactive' | 'cancelled';
 
 // Tipo "de saída" para a UI.
 // Importante: a tela não depende do model bruto do banco.
@@ -18,10 +21,19 @@ export type SubscriptionItem = {
     currency: string; // Moeda do valor (BRL, USD...).
     billingDate: number; // Dia do ciclo de cobrança (1-31).
     isActive: boolean; // Se assinatura está ativa.
+    status: SubscriptionStatus; // Status detalhado da assinatura.
     categoryId: string; // ID da categoria.
     categoryName: string; // Nome da categoria.
     categoryIcon: string; // Ícone da categoria para renderização na UI.
 };
+
+function normalizeStatus(rowStatus: string | null | undefined, isActive: boolean): SubscriptionStatus {
+    if (rowStatus === 'active' || rowStatus === 'inactive' || rowStatus === 'cancelled') {
+        return rowStatus;
+    }
+
+    return isActive ? 'active' : 'cancelled';
+}
 
 // Hook customizado para centralizar leitura de assinaturas.
 // Importante: evita duplicar lógica de banco na UI.
@@ -64,6 +76,7 @@ export function useSubscriptions() {
                     currency: row.currency,
                     billingDate: row.billingDate,
                     isActive: row.isActive,
+                    status: normalizeStatus((row as any).status, row.isActive),
                     categoryId: row.categoryId,
                     categoryName: category.name,
                     categoryIcon: category.icon,
@@ -114,6 +127,7 @@ export function useSubscriptions() {
                 currency: row.currency,
                 billingDate: row.billingDate,
                 isActive: row.isActive,
+                status: normalizeStatus((row as any).status, row.isActive),
                 categoryId: row.categoryId,
                 categoryName: category.name,
                 categoryIcon: category.icon,
@@ -131,7 +145,9 @@ export function useSubscriptions() {
         value?: number; 
         currency?: string; 
         billingDate?: number; 
-        categoryId?: string 
+        categoryId?: string;
+        isActive?: boolean;
+        status?: SubscriptionStatus;
     }) => {
         try {
             const collection = database.get<Subscription>('subscriptions');
@@ -161,6 +177,13 @@ export function useSubscriptions() {
                     if (dataToUpdate.categoryId !== undefined) {
                         subscription.categoryId = dataToUpdate.categoryId;
                     }
+                    if (dataToUpdate.status !== undefined) {
+                        subscription.status = dataToUpdate.status;
+                        subscription.isActive = dataToUpdate.status === 'active';
+                    } else if (dataToUpdate.isActive !== undefined) {
+                        subscription.isActive = dataToUpdate.isActive;
+                        subscription.status = dataToUpdate.isActive ? 'active' : 'inactive';
+                    }
                 });
             });
 
@@ -171,10 +194,36 @@ export function useSubscriptions() {
         }
     };
 
+    const deleteSubscription = async (id: string) => {
+        try {
+            const collection = database.get<Subscription>('subscriptions');
+            const record = await collection.find(id);
+
+            if (record.notificationId) {
+                await subscriptionNotificationService.cancelNotification(record.notificationId);
+            }
+
+            await database.write(async () => {
+                await record.destroyPermanently();
+            });
+
+            await loadSubscriptions();
+        } catch (error) {
+            console.error('Erro ao excluir a assinatura:', error);
+            throw error;
+        }
+    };
+
+    const setSubscriptionStatus = async (id: string, status: SubscriptionStatus) => {
+        await updateSubscription(id, {
+            status,
+        });
+    };
+
     // Derivação memoizada: só assinaturas ativas.
     // Importante: evita recalcular em toda render sem necessidade.
     const activeSubscriptions = useMemo(
-        () => items.filter((item) => item.isActive),
+        () => items.filter((item) => item.status === 'active'),
         [items]
     );
 
@@ -195,5 +244,7 @@ export function useSubscriptions() {
         categories, // Lista de categorias disponíveis.
         getSubscriptionById,
         updateSubscription,
+        deleteSubscription,
+        setSubscriptionStatus,
     };
 }

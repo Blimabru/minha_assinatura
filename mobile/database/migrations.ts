@@ -6,7 +6,7 @@ import { schemaMigrations, addColumns } from '@nozbe/watermelondb/Schema/migrati
 
   - Ao aumentar `schema.version` acima da versão presente no DB, o Watermelon
     aplicará os passos definidos aqui (se suportado pelo adapter).
-  - Neste arquivo adicionamos a coluna `notification_id` na versão 2.
+  - Neste arquivo adicionamos a coluna `notification_id` na versão 2 e `status` na versão 3.
 */
 export const migrations = schemaMigrations({
   migrations: [
@@ -16,6 +16,15 @@ export const migrations = schemaMigrations({
         addColumns({
           table: 'subscriptions',
           columns: [{ name: 'notification_id', type: 'string' }],
+        }),
+      ],
+    },
+    {
+      toVersion: 3,
+      steps: [
+        addColumns({
+          table: 'subscriptions',
+          columns: [{ name: 'status', type: 'string' }],
         }),
       ],
     },

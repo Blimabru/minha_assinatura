@@ -101,6 +101,7 @@ export const SubscriptionFormExample: React.FC<SubscriptionFormExampleProps> = (
           // usa dia do mês da data de expiração como billing_date
           s.billingDate = formData.expirationDate.getDate();
           s.isActive = true;
+          s.status = 'active';
         });
 
         createdSubscriptionId = created.id;

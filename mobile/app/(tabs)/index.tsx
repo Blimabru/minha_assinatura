@@ -2,14 +2,14 @@
 import React, { useState, useMemo } from 'react';
 
 // Componentes nativos para botão, lista e estilos.
-import { FlatList, Pressable, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 
 // Componentes tematizados do projeto.
 import { Text, View } from '@/components/Themed';
 
 // Hook reativo que já alimenta a dashboard.
-import { useSubscriptions, type SubscriptionItem } from '@/database/hooks/useSubscriptions';
+import { useSubscriptions, type SubscriptionItem, type SubscriptionStatus } from '@/database/hooks/useSubscriptions';
 import SearchBar from '../../src/components/UI/SearchBar';
 import { formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/utils/formatCurrency';
 import { useTopAlert } from '../../src/hooks/useTopAlert';
@@ -22,19 +22,25 @@ export default function TabOneScreen() {
   const { TopAlert, showError, showSuccess } = useTopAlert();
 
   // Dados derivados do banco (reativos).
-  const { loading, items, activeSubscriptions, monthlyTotal, updateSubscription, categories } = useSubscriptions();
+  const { loading, items, activeSubscriptions, monthlyTotal, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
 
   // Estados para busca/filtragem (movido de subscriptions.tsx)
   const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'active' | 'cancelled' | 'expired'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'inactive' | 'cancelled'>('all');
 
   const filtered = useMemo(() => {
-    const base = filter === 'all' ? items : filter === 'active' ? items.filter(i => i.isActive) : items.filter(i => !i.isActive);
+    const base =
+      filter === 'all'
+        ? items
+        : filter === 'active'
+          ? items.filter((i) => i.status === 'active')
+          : items.filter((i) => i.status === filter);
     return base.filter(i => i.serviceName.toLowerCase().includes(query.toLowerCase()));
   }, [items, filter, query]);
 
   // Estados para o modal de edição
   const [modalVisible, setModalVisible] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionItem | null>(null);
   const [editServiceName, setEditServiceName] = useState('');
   const [editValue, setEditValue] = useState('');
@@ -51,6 +57,15 @@ export default function TabOneScreen() {
     setEditBillingDate(subscription.billingDate.toString());
     setEditCategoryId(subscription.categoryId);
     setModalVisible(true);
+  }
+
+  function openActionMenu(subscription: SubscriptionItem) {
+    setSelectedSubscription(subscription);
+    setMenuVisible(true);
+  }
+
+  function closeActionMenu() {
+    setMenuVisible(false);
   }
 
   // Função para salvar edição
@@ -101,6 +116,46 @@ export default function TabOneScreen() {
     }
   }
 
+  async function handleChangeStatus(status: SubscriptionStatus) {
+    if (!selectedSubscription) return;
+
+    try {
+      await setSubscriptionStatus(selectedSubscription.id, status);
+      const statusLabel = status === 'active' ? 'ativa' : status === 'inactive' ? 'inativa' : 'cancelada';
+      showSuccess(`Assinatura marcada como ${statusLabel}.`);
+      closeActionMenu();
+    } catch (error) {
+      console.error(error);
+      showError('Não foi possível alterar o status da assinatura.');
+    }
+  }
+
+  function handleDeleteSubscription() {
+    if (!selectedSubscription) return;
+
+    Alert.alert(
+      'Excluir assinatura',
+      `Deseja excluir "${selectedSubscription.serviceName}"? Esta ação não pode ser desfeita.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteSubscription(selectedSubscription.id);
+              showSuccess('Assinatura excluída com sucesso.');
+              closeActionMenu();
+            } catch (error) {
+              console.error(error);
+              showError('Não foi possível excluir a assinatura.');
+            }
+          },
+        },
+      ]
+    );
+  }
+
   return (
     <View style={styles.container}>
       <TopAlert />
@@ -108,8 +163,19 @@ export default function TabOneScreen() {
       {/* Search and filters (from Subscriptions screen) */}
       <SearchBar value={query} onChange={setQuery} placeholder="Buscar assinaturas..." />
       <View style={styles.filters}>
-        {['Todas','Ativas','Canceladas','Expiradas'].map((f, idx) => (
-          <Text key={f} onPress={() => setFilter(idx===0?'all':idx===1?'active':'cancelled')} style={[styles.filterItem, filter==='all' && idx===0?styles.filterActive:null]}>{f}</Text>
+        {[
+          { label: 'Todas', value: 'all' },
+          { label: 'Ativas', value: 'active' },
+          { label: 'Inativas', value: 'inactive' },
+          { label: 'Canceladas', value: 'cancelled' },
+        ].map((item) => (
+          <Text
+            key={item.value}
+            onPress={() => setFilter(item.value as 'all' | 'active' | 'inactive' | 'cancelled')}
+            style={[styles.filterItem, filter === item.value ? styles.filterActive : null]}
+          >
+            {item.label}
+          </Text>
         ))}
       </View>
 
@@ -130,13 +196,51 @@ export default function TabOneScreen() {
               value={item.value}
               currency={item.currency}
               billingDate={item.billingDate}
-              isActive={item.isActive}
+              status={item.status}
               onPress={() => openEditModal(item)}
-              onEdit={() => openEditModal(item)}
+              onMenuPress={() => openActionMenu(item)}
             />
           )}
         />
       )}
+
+      <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={closeActionMenu}>
+        <Pressable style={styles.menuOverlay} onPress={closeActionMenu}>
+          <Pressable style={styles.menuContainer} onPress={() => {}}>
+            <Text style={styles.menuTitle}>Ações da assinatura</Text>
+            <Text style={styles.menuSubtitle}>{selectedSubscription?.serviceName}</Text>
+
+            <Pressable style={styles.menuActionButton} onPress={() => {
+              if (selectedSubscription) {
+                closeActionMenu();
+                openEditModal(selectedSubscription);
+              }
+            }}>
+              <Text style={styles.menuActionText}>Editar assinatura</Text>
+            </Pressable>
+
+            <Pressable style={styles.menuActionButton} onPress={() => handleChangeStatus('active')}>
+              <Text style={styles.menuActionText}>Marcar como ativa</Text>
+            </Pressable>
+
+            <Pressable style={styles.menuActionButton} onPress={() => handleChangeStatus('inactive')}>
+              <Text style={styles.menuActionText}>Marcar como inativa</Text>
+            </Pressable>
+
+            <Pressable style={styles.menuActionButton} onPress={() => handleChangeStatus('cancelled')}>
+              <Text style={styles.menuActionText}>Marcar como cancelada</Text>
+            </Pressable>
+
+            <Pressable style={[styles.menuActionButton, styles.menuDangerButton]} onPress={handleDeleteSubscription}>
+              <Text style={[styles.menuActionText, styles.menuDangerText]}>Excluir assinatura</Text>
+            </Pressable>
+
+            <Pressable style={styles.menuCloseButton} onPress={closeActionMenu}>
+              <Text style={styles.menuCloseText}>Fechar</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Modal visible={modalVisible} animationType="slide" onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalContainer}>
@@ -248,6 +352,54 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: 12,
+  },
+  menuOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    justifyContent: 'flex-end',
+  },
+  menuContainer: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+  },
+  menuTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111',
+  },
+  menuSubtitle: {
+    marginTop: 4,
+    marginBottom: 16,
+    color: '#666',
+  },
+  menuActionButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#f4f4f4',
+    marginBottom: 10,
+  },
+  menuActionText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111',
+  },
+  menuDangerButton: {
+    backgroundColor: '#fff1f1',
+  },
+  menuDangerText: {
+    color: '#b42318',
+  },
+  menuCloseButton: {
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  menuCloseText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#007bff',
   },
   cardContent: {
     flex: 1,

@@ -210,6 +210,7 @@ export default function CreateSubscriptionScreen() {
           subscription.categoryId = formData.categoryId;
           subscription.userId = currentUserId;
           subscription.isActive = true;
+          subscription.status = 'active';
         });
       });
 
