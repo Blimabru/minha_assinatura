@@ -15,7 +15,6 @@ import { formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/util
 import { useTopAlert } from '../../src/hooks/useTopAlert';
 
 // Ícones
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import CardItem from '../../src/components/UI/CardItem';
 
 // Tela principal da aba Dashboard.
@@ -127,6 +126,7 @@ export default function TabOneScreen() {
             <CardItem
               id={item.id}
               serviceName={item.serviceName}
+              iconName={item.categoryIcon}
               value={item.value}
               currency={item.currency}
               billingDate={item.billingDate}
