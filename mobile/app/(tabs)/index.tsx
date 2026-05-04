@@ -31,9 +31,6 @@ export default function TabOneScreen() {
   // Dados derivados do banco (reativos).
   const { loading, activeSubscriptions, monthlyTotal, updateSubscription, categories } = useSubscriptions();
 
-  // Estado para bloquear múltiplos cliques no botão de criar.
-  const [creating, setCreating] = useState(false);
-
   // Estados para o modal de edição
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionItem | null>(null);
@@ -42,80 +39,6 @@ export default function TabOneScreen() {
   const [editCurrency, setEditCurrency] = useState('');
   const [editBillingDate, setEditBillingDate] = useState('');
   const [editCategoryId, setEditCategoryId] = useState('');
-
-  // Função de teste para inserir dados locais.
-  // Importante: valida o fluxo offline-first ponta a ponta.
-  async function handleAddTestSubscription() {
-    // Evita toque duplo durante operação assíncrona.
-    if (creating) return;
-
-    setCreating(true);
-
-    try {
-      // Coleções tipadas para leitura/escrita.
-      const users = database.get<User>('users');
-      const categories = database.get<Category>('categories');
-      const subscriptions = database.get<Subscription>('subscriptions');
-
-      // Busca um usuário padrão por email.
-      let defaultUser = await users
-        .query(Q.where('email', 'usuario.local@minhaassinatura.app'))
-        .fetch();
-
-      // Busca uma categoria padrão por nome.
-      let defaultCategory = await categories
-        .query(Q.where('name', 'Streaming'))
-        .fetch();
-
-      // Todas as escritas no Watermelon precisam ocorrer dentro de database.write.
-      await database.write(async () => {
-        // Cria usuário padrão apenas se não existir.
-        if (defaultUser.length === 0) {
-          const createdUser = await users.create((user) => {
-            user.name = 'Usuario Local';
-            user.email = 'usuario.local@minhaassinatura.app';
-            user.passwordHash = 'local_dev_only';
-            user.currencyPreference = 'BRL';
-          });
-
-          // Atualiza variável local com usuário recém-criado.
-          defaultUser = [createdUser];
-        }
-
-        // Cria categoria padrão apenas se não existir.
-        if (defaultCategory.length === 0) {
-          const createdCategory = await categories.create((category) => {
-            category.name = 'Streaming';
-            category.icon = 'tv';
-          });
-
-          // Atualiza variável local com categoria recém-criada.
-          defaultCategory = [createdCategory];
-        }
-
-        // Cria assinatura de teste com timestamp para diferenciar nome.
-        await subscriptions.create((subscription) => {
-          subscription.userId = defaultUser[0].id;
-          subscription.categoryId = defaultCategory[0].id;
-          subscription.serviceName = `Netflix Teste ${Date.now()}`;
-          subscription.value = 39.9;
-          subscription.currency = 'BRL';
-          subscription.billingDate = 10;
-          subscription.isActive = true;
-        });
-      });
-
-      // Feedback de sucesso.
-      Alert.alert('Sucesso', 'Assinatura de teste criada no banco local.');
-    } catch (error) {
-      // Feedback de erro para diagnóstico rápido.
-      console.error(error);
-      Alert.alert('Erro', 'Não foi possível criar a assinatura de teste.');
-    } finally {
-      // Libera botão no fim da execução.
-      setCreating(false);
-    }
-  }
 
   // Função para abrir modal de edição
   function openEditModal(subscription: SubscriptionItem) {
