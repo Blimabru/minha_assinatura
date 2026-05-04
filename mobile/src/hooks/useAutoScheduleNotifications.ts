@@ -61,6 +61,17 @@ export const useAutoScheduleNotifications = () => {
     [scheduleAlert, updateAlert]
   );
 
+  /*
+    Comentários (pt-br):
+    - `scheduleForSubscription` agenda ou atualiza uma notificação para uma assinatura.
+    - Observação: esta função retorna o `notificationId` (se agendado com sucesso),
+      mas não persiste automaticamente este id no banco. Chamadores que desejam
+      que o `notificationId` seja salvo no WatermelonDB devem gravá-lo explicitamente
+      após a chamada (ex.: atualizar o registro de `subscriptions`).
+    - No nosso fluxo atual, alguns componentes que criam assinaturas fazem essa
+      persistência logo após receber o `notificationId`.
+  */
+
   /**
    * Cancela a notificação de uma assinatura
    * Deve ser chamada ao deletar uma assinatura ou desativar notificações
