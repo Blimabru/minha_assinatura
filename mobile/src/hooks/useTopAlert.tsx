@@ -1,6 +1,8 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Animated, View, StyleSheet } from 'react-native';
 import { Text } from '@/components/Themed';
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 
 /*
   useTopAlert.ts
@@ -70,8 +72,11 @@ export function useTopAlert() {
   const TopAlert = () => {
     if (!state.isVisible) return null;
 
+    const colorScheme = useColorScheme();
+    const colors = Colors[colorScheme ?? 'light'];
+
     const bgColor =
-      state.type === 'error' ? '#E53935' : state.type === 'warning' ? '#FB8C00' : '#43A047';
+      state.type === 'error' ? colors.error : state.type === 'warning' ? colors.warning : colors.success;
 
     return (
       <Animated.View

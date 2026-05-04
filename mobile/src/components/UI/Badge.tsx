@@ -14,13 +14,14 @@ import { Text, View, StyleSheet } from 'react-native';
 interface BadgeProps {
   text: string;
   color?: string;
+  textColor?: string;
 }
 
-export const Badge: React.FC<BadgeProps> = ({ text, color = '#E0E0E0' }) => {
+export const Badge: React.FC<BadgeProps> = ({ text, color = '#E0E0E0', textColor = '#000' }) => {
   // Renderiza um pequeno rótulo com background color e texto em negrito.
   return (
     <View style={[styles.container, { backgroundColor: color }]}> 
-      <Text style={styles.text}>{text}</Text>
+      <Text style={[styles.text, { color: textColor }]}>{text}</Text>
     </View>
   );
 };
@@ -33,7 +34,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   text: {
-    color: '#000',
     fontSize: 12,
     fontWeight: '600',
   },

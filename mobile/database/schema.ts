@@ -16,8 +16,8 @@ import { appSchema, tableSchema } from '@nozbe/watermelondb';
 export const schema = appSchema({
   // Versão do schema.
   // Sempre aumente quando alterar tabelas/colunas (com migração correspondente).
-  // Atualizado para 3 após adição de `status` em subscriptions.
-  version: 3,
+  // Atualizado para 4 após adição de `recurrence` e `due_date` em subscriptions.
+  version: 4,
 
   // Lista de tabelas do banco.
   tables: [
@@ -67,6 +67,8 @@ export const schema = appSchema({
         { name: 'billing_date', type: 'number' }, // Dia do mês da cobrança (1-31).
         { name: 'is_active', type: 'boolean' }, // Status ativo/cancelado.
         { name: 'status', type: 'string' }, // Status detalhado: active, inactive ou cancelled.
+        { name: 'recurrence', type: 'string' }, // Recorrência da assinatura.
+        { name: 'due_date', type: 'string' }, // Vencimento completo (YYYY-MM-DD).
 
         // Metadados para auditoria/sincronização futura.
         { name: 'created_at', type: 'number' }, // Criação local.

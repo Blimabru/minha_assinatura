@@ -9,6 +9,7 @@ import database from '@/database';
 import Subscription from '@/database/models/Subscription';
 import Category from '@/database/models/Category';
 import { subscriptionNotificationService } from '@/src/services/SubscriptionNotificationService';
+import type { SubscriptionRecurrence } from '@/src/utils/subscriptionSchedule';
 
 export type SubscriptionStatus = 'active' | 'inactive' | 'cancelled';
 
@@ -22,6 +23,8 @@ export type SubscriptionItem = {
     billingDate: number; // Dia do ciclo de cobrança (1-31).
     isActive: boolean; // Se assinatura está ativa.
     status: SubscriptionStatus; // Status detalhado da assinatura.
+    recurrence: SubscriptionRecurrence; // Recorrência da assinatura.
+    dueDate: string; // Vencimento completo em formato YYYY-MM-DD.
     categoryId: string; // ID da categoria.
     categoryName: string; // Nome da categoria.
     categoryIcon: string; // Ícone da categoria para renderização na UI.
@@ -33,6 +36,14 @@ function normalizeStatus(rowStatus: string | null | undefined, isActive: boolean
     }
 
     return isActive ? 'active' : 'cancelled';
+}
+
+function normalizeRecurrence(recurrence: string | null | undefined): SubscriptionRecurrence {
+    if (recurrence === 'mensal' || recurrence === 'trimestral' || recurrence === 'semestral' || recurrence === 'anual') {
+        return recurrence;
+    }
+
+    return 'mensal';
 }
 
 // Hook customizado para centralizar leitura de assinaturas.
@@ -77,6 +88,8 @@ export function useSubscriptions() {
                     billingDate: row.billingDate,
                     isActive: row.isActive,
                     status: normalizeStatus((row as any).status, row.isActive),
+                    recurrence: normalizeRecurrence((row as any).recurrence),
+                    dueDate: (row as any).dueDate || '',
                     categoryId: row.categoryId,
                     categoryName: category.name,
                     categoryIcon: category.icon,
@@ -128,6 +141,8 @@ export function useSubscriptions() {
                 billingDate: row.billingDate,
                 isActive: row.isActive,
                 status: normalizeStatus((row as any).status, row.isActive),
+                recurrence: normalizeRecurrence((row as any).recurrence),
+                dueDate: (row as any).dueDate || '',
                 categoryId: row.categoryId,
                 categoryName: category.name,
                 categoryIcon: category.icon,
@@ -148,6 +163,8 @@ export function useSubscriptions() {
         categoryId?: string;
         isActive?: boolean;
         status?: SubscriptionStatus;
+        recurrence?: SubscriptionRecurrence;
+        dueDate?: string;
     }) => {
         try {
             const collection = database.get<Subscription>('subscriptions');
@@ -183,6 +200,12 @@ export function useSubscriptions() {
                     } else if (dataToUpdate.isActive !== undefined) {
                         subscription.isActive = dataToUpdate.isActive;
                         subscription.status = dataToUpdate.isActive ? 'active' : 'inactive';
+                    }
+                    if (dataToUpdate.recurrence !== undefined) {
+                        subscription.recurrence = dataToUpdate.recurrence;
+                    }
+                    if (dataToUpdate.dueDate !== undefined) {
+                        subscription.dueDate = dataToUpdate.dueDate;
                     }
                 });
             });
