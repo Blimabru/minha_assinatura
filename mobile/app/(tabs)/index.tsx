@@ -13,6 +13,8 @@ import { useSubscriptions, type SubscriptionItem, type SubscriptionStatus } from
 import SearchBar from '../../src/components/UI/SearchBar';
 import { formatCurrencyByCode, formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/utils/formatCurrency';
 import { useTopAlert } from '../../src/hooks/useTopAlert';
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 
 // Ícones
 import CardItem from '../../src/components/UI/CardItem';
@@ -20,6 +22,8 @@ import CardItem from '../../src/components/UI/CardItem';
 // Tela principal da aba Dashboard.
 export default function TabOneScreen() {
   const { TopAlert, showError, showSuccess } = useTopAlert();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
 
   // Dados derivados do banco (reativos).
   const { loading, items, activeSubscriptions, monthlyTotal, totalExpenses, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
@@ -53,9 +57,9 @@ export default function TabOneScreen() {
 
   const chartData = useMemo(() => {
     const entries = [
-      { key: 'active' as const, label: 'Ativas', color: '#0b7a5a' },
-      { key: 'inactive' as const, label: 'Inativas', color: '#d97706' },
-      { key: 'cancelled' as const, label: 'Canceladas', color: '#dc2626' },
+      { key: 'active' as const, label: 'Ativas', color: colors.chartActive },
+      { key: 'inactive' as const, label: 'Inativas', color: colors.chartInactive },
+      { key: 'cancelled' as const, label: 'Canceladas', color: colors.chartCancelled },
     ];
 
     const maxValue = Math.max(...entries.map((entry) => expenseSummary[entry.key]), 1);
@@ -65,7 +69,7 @@ export default function TabOneScreen() {
       value: expenseSummary[entry.key],
       width: `${Math.max((expenseSummary[entry.key] / maxValue) * 100, 8)}%` as `${number}%`,
     }));
-  }, [expenseSummary]);
+  }, [expenseSummary, colors]);
 
   // Estados para o modal de edição
   const [modalVisible, setModalVisible] = useState(false);
@@ -196,34 +200,34 @@ export default function TabOneScreen() {
             <TopAlert />
 
             <View style={styles.summaryGrid}>
-              <View style={[styles.summaryCard, styles.summaryCardPrimary]}>
-                <Text style={styles.summaryLabel}>Gasto total</Text>
-                <Text style={styles.summaryValue}>{formatCurrencyByCode(totalExpenses, 'BRL')}</Text>
-                <Text style={styles.summaryHint}>Somando todas as assinaturas</Text>
+              <View style={[styles.summaryCard, styles.summaryCardPrimary, { backgroundColor: colors.backgroundSecondary }]}>
+                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Gasto total</Text>
+                <Text style={[styles.summaryValue, { color: colors.text }]}>{formatCurrencyByCode(totalExpenses, 'BRL')}</Text>
+                <Text style={[styles.summaryHint, { color: colors.textTertiary }]}>Somando todas as assinaturas</Text>
               </View>
 
               <View style={styles.summaryRow}>
-                <View style={styles.summaryMiniCard}>
-                  <Text style={styles.summaryLabel}>Ativas</Text>
-                  <Text style={styles.summaryMiniValue}>{formatCurrencyByCode(expenseSummary.active, 'BRL')}</Text>
+                <View style={[styles.summaryMiniCard, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
+                  <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Ativas</Text>
+                  <Text style={[styles.summaryMiniValue, { color: colors.text }]}>{formatCurrencyByCode(expenseSummary.active, 'BRL')}</Text>
                 </View>
-                <View style={styles.summaryMiniCard}>
-                  <Text style={styles.summaryLabel}>Canceladas</Text>
-                  <Text style={styles.summaryMiniValue}>{formatCurrencyByCode(expenseSummary.cancelled, 'BRL')}</Text>
+                <View style={[styles.summaryMiniCard, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
+                  <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Canceladas</Text>
+                  <Text style={[styles.summaryMiniValue, { color: colors.text }]}>{formatCurrencyByCode(expenseSummary.cancelled, 'BRL')}</Text>
                 </View>
               </View>
             </View>
 
             <View style={styles.chartSection}>
-              <Text style={styles.sectionTitle}>Distribuição dos gastos</Text>
-              <View style={styles.chartCard}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>Distribuição dos gastos</Text>
+              <View style={[styles.chartCard, { backgroundColor: colors.chartCardBackground, borderColor: colors.cardBorder }]}>
                 {chartData.map((item) => (
                   <View key={item.key} style={styles.chartItem}>
                     <View style={styles.chartHeader}>
-                      <Text style={styles.chartLabel}>{item.label}</Text>
-                      <Text style={styles.chartValue}>{formatCurrencyByCode(item.value, 'BRL')}</Text>
+                      <Text style={[styles.chartLabel, { color: colors.text }]}>{item.label}</Text>
+                      <Text style={[styles.chartValue, { color: colors.textSecondary }]}>{formatCurrencyByCode(item.value, 'BRL')}</Text>
                     </View>
-                    <View style={styles.chartTrack}>
+                    <View style={[styles.chartTrack, { backgroundColor: colors.chartTrackBg }]}>
                       <View style={[styles.chartFill, { width: item.width, backgroundColor: item.color }]} />
                     </View>
                   </View>
@@ -242,7 +246,14 @@ export default function TabOneScreen() {
                 <Text
                   key={item.value}
                   onPress={() => setFilter(item.value as 'all' | 'active' | 'inactive' | 'cancelled')}
-                  style={[styles.filterItem, filter === item.value ? styles.filterActive : null]}
+                  style={[
+                    styles.filterItem,
+                    {
+                      backgroundColor: filter === item.value ? colors.tint : colors.backgroundTertiary,
+                      color: filter === item.value ? colors.textInverse : colors.text,
+                    },
+                    filter === item.value && styles.filterActive,
+                  ]}
                 >
                   {item.label}
                 </Text>
@@ -251,7 +262,7 @@ export default function TabOneScreen() {
           </>
         )}
         ListEmptyComponent={(
-          <Text style={styles.emptyMessage}>
+          <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
             {loading ? 'Carregando assinaturas...' : 'Nenhuma assinatura encontrada.'}
           </Text>
         )}
@@ -272,87 +283,91 @@ export default function TabOneScreen() {
 
       <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={closeActionMenu}>
         <Pressable style={styles.menuOverlay} onPress={closeActionMenu}>
-          <Pressable style={styles.menuContainer} onPress={() => {}}>
-            <Text style={styles.menuTitle}>Ações da assinatura</Text>
-            <Text style={styles.menuSubtitle}>{selectedSubscription?.serviceName}</Text>
+          <Pressable style={[styles.menuContainer, { backgroundColor: colors.cardBackground }]} onPress={() => {}}>
+            <Text style={[styles.menuTitle, { color: colors.text }]}>Ações da assinatura</Text>
+            <Text style={[styles.menuSubtitle, { color: colors.textSecondary }]}>{selectedSubscription?.serviceName}</Text>
 
-            <Pressable style={styles.menuActionButton} onPress={() => {
+            <Pressable style={[styles.menuActionButton, { backgroundColor: colors.backgroundTertiary }]} onPress={() => {
               if (selectedSubscription) {
                 closeActionMenu();
                 openEditModal(selectedSubscription);
               }
             }}>
-              <Text style={styles.menuActionText}>Editar assinatura</Text>
+              <Text style={[styles.menuActionText, { color: colors.text }]}>Editar assinatura</Text>
             </Pressable>
 
-            <Pressable style={styles.menuActionButton} onPress={() => handleChangeStatus('active')}>
-              <Text style={styles.menuActionText}>Marcar como ativa</Text>
+            <Pressable style={[styles.menuActionButton, { backgroundColor: colors.backgroundTertiary }]} onPress={() => handleChangeStatus('active')}>
+              <Text style={[styles.menuActionText, { color: colors.text }]}>Marcar como ativa</Text>
             </Pressable>
 
-            <Pressable style={styles.menuActionButton} onPress={() => handleChangeStatus('inactive')}>
-              <Text style={styles.menuActionText}>Marcar como inativa</Text>
+            <Pressable style={[styles.menuActionButton, { backgroundColor: colors.backgroundTertiary }]} onPress={() => handleChangeStatus('inactive')}>
+              <Text style={[styles.menuActionText, { color: colors.text }]}>Marcar como inativa</Text>
             </Pressable>
 
-            <Pressable style={styles.menuActionButton} onPress={() => handleChangeStatus('cancelled')}>
-              <Text style={styles.menuActionText}>Marcar como cancelada</Text>
+            <Pressable style={[styles.menuActionButton, { backgroundColor: colors.backgroundTertiary }]} onPress={() => handleChangeStatus('cancelled')}>
+              <Text style={[styles.menuActionText, { color: colors.text }]}>Marcar como cancelada</Text>
             </Pressable>
 
-            <Pressable style={[styles.menuActionButton, styles.menuDangerButton]} onPress={handleDeleteSubscription}>
-              <Text style={[styles.menuActionText, styles.menuDangerText]}>Excluir assinatura</Text>
+            <Pressable style={[styles.menuActionButton, styles.menuDangerButton, { backgroundColor: colors.cancelledBg }]} onPress={handleDeleteSubscription}>
+              <Text style={[styles.menuActionText, styles.menuDangerText, { color: colors.cancelledText }]}>Excluir assinatura</Text>
             </Pressable>
 
             <Pressable style={styles.menuCloseButton} onPress={closeActionMenu}>
-              <Text style={styles.menuCloseText}>Fechar</Text>
+              <Text style={[styles.menuCloseText, { color: colors.tint }]}>Fechar</Text>
             </Pressable>
           </Pressable>
         </Pressable>
       </Modal>
 
       <Modal visible={modalVisible} animationType="slide" onRequestClose={() => setModalVisible(false)}>
-        <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>Editar Assinatura</Text>
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <Text style={[styles.modalTitle, { color: colors.text }]}>Editar Assinatura</Text>
           {selectedSubscription && (
             <>
-              <Text style={styles.modalLabel}>Nome do Serviço:</Text>
+              <Text style={[styles.modalLabel, { color: colors.text }]}>Nome do Serviço:</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
                 value={editServiceName}
                 onChangeText={setEditServiceName}
                 placeholder="Ex: Netflix"
+                placeholderTextColor={colors.textTertiary}
               />
 
-              <Text style={styles.modalLabel}>Valor:</Text>
+              <Text style={[styles.modalLabel, { color: colors.text }]}>Valor:</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
                 value={editValue}
                 onChangeText={(t) => setEditValue(formatCurrencyInput(t))}
                 keyboardType="numeric"
                 placeholder="Ex: 39.90"
+                placeholderTextColor={colors.textTertiary}
               />
 
-              <Text style={styles.modalLabel}>Moeda:</Text>
+              <Text style={[styles.modalLabel, { color: colors.text }]}>Moeda:</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
                 value={editCurrency}
                 onChangeText={setEditCurrency}
                 placeholder="Ex: BRL, USD"
+                placeholderTextColor={colors.textTertiary}
               />
 
-              <Text style={styles.modalLabel}>Dia de Vencimento:</Text>
+              <Text style={[styles.modalLabel, { color: colors.text }]}>Dia de Vencimento:</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
                 value={editBillingDate}
                 onChangeText={setEditBillingDate}
                 keyboardType="numeric"
                 placeholder="Ex: 10"
+                placeholderTextColor={colors.textTertiary}
               />
 
-              <Text style={styles.modalLabel}>Categoria:</Text>
-              <View style={styles.pickerContainer}>
+              <Text style={[styles.modalLabel, { color: colors.text }]}>Categoria:</Text>
+              <View style={[styles.pickerContainer, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}>
                 <Picker
                   selectedValue={editCategoryId}
                   onValueChange={(itemValue: string) => setEditCategoryId(itemValue)}
-                  style={styles.picker}
+                  style={[styles.picker, { color: colors.text }]}
                 >
                   <Picker.Item label="Selecione uma categoria" value="" />
                   {categories.map((category) => (
@@ -361,11 +376,11 @@ export default function TabOneScreen() {
                 </Picker>
               </View>
 
-              <Pressable style={styles.saveButton} onPress={handleSaveEdit}>
+              <Pressable style={[styles.saveButton, { backgroundColor: colors.tint }]} onPress={handleSaveEdit}>
                 <Text style={styles.saveButtonText}>Salvar</Text>
               </Pressable>
-              <Pressable style={styles.cancelButton} onPress={() => setModalVisible(false)}>
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
+              <Pressable style={[styles.cancelButton, { backgroundColor: colors.backgroundTertiary }]} onPress={() => setModalVisible(false)}>
+                <Text style={[styles.cancelButtonText, { color: colors.text }]}>Cancelar</Text>
               </Pressable>
             </>
           )}
@@ -389,7 +404,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   summaryCard: {
-    backgroundColor: '#0f172a',
     borderRadius: 18,
     padding: 18,
   },
@@ -405,14 +419,11 @@ const styles = StyleSheet.create({
   },
   summaryMiniCard: {
     flex: 1,
-    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: '#ececec',
   },
   summaryLabel: {
-    color: '#94a3b8',
     fontSize: 12,
     fontWeight: '600',
     textTransform: 'uppercase',
@@ -422,32 +433,32 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 26,
     fontWeight: '800',
-    color: '#fff',
   },
   summaryMiniValue: {
     marginTop: 8,
     fontSize: 18,
     fontWeight: '800',
-    color: '#111',
   },
   summaryHint: {
     marginTop: 6,
-    color: '#cbd5e1',
     fontSize: 12,
   },
   chartSection: {
     marginBottom: 16,
   },
   chartCard: {
-    backgroundColor: '#fff',
     borderRadius: 18,
     padding: 16,
-    borderWidth: 1,
-    borderColor: '#ececec',
+    borderWidth: 1.5,
     gap: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   chartItem: {
-    gap: 8,
+    gap: 10,
+    paddingBottom: 4,
   },
   chartHeader: {
     flexDirection: 'row',
@@ -457,17 +468,14 @@ const styles = StyleSheet.create({
   chartLabel: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#111',
   },
   chartValue: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#475569',
   },
   chartTrack: {
-    height: 10,
+    height: 12,
     borderRadius: 999,
-    backgroundColor: '#e2e8f0',
     overflow: 'hidden',
   },
   chartFill: {
@@ -485,16 +493,15 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   filters: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  filterItem: { padding: 8, backgroundColor: '#e9e9e9', borderRadius: 8, marginRight: 8 },
-  filterActive: { backgroundColor: '#ddd' },
+  filterItem: { padding: 8, borderRadius: 8, marginRight: 8 },
+  filterActive: { fontWeight: '600' },
   cardsRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  card: { backgroundColor: '#fff', borderRadius: 12, padding: 16, flex: 1, marginRight: 8 },
-  cardLabel: { color: '#666', fontWeight: '600' },
+  card: { borderRadius: 12, padding: 16, flex: 1, marginRight: 8 },
+  cardLabel: { fontWeight: '600' },
   cardValue: { fontSize: 20, fontWeight: '800', marginTop: 8 },
   sectionTitle: { fontSize: 16, fontWeight: '700', marginVertical: 12 },
-  chartPlaceholder: { backgroundColor: '#fff', borderRadius: 12, height: 200, justifyContent: 'center', alignItems: 'center' },
+  chartPlaceholder: { borderRadius: 12, height: 200, justifyContent: 'center', alignItems: 'center' },
   addButton: {
-    backgroundColor: '#0b7a5a',
     borderRadius: 10,
     paddingVertical: 14,
     paddingHorizontal: 16,
@@ -515,7 +522,6 @@ const styles = StyleSheet.create({
   },
   emptyMessage: {
     marginTop: 12,
-    color: '#666',
   },
   menuOverlay: {
     flex: 1,
@@ -523,7 +529,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   menuContainer: {
-    backgroundColor: '#fff',
     padding: 20,
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18,
@@ -531,30 +536,26 @@ const styles = StyleSheet.create({
   menuTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#111',
   },
   menuSubtitle: {
     marginTop: 4,
     marginBottom: 16,
-    color: '#666',
   },
   menuActionButton: {
     paddingVertical: 14,
     paddingHorizontal: 12,
     borderRadius: 10,
-    backgroundColor: '#f4f4f4',
     marginBottom: 10,
   },
   menuActionText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#111',
   },
   menuDangerButton: {
-    backgroundColor: '#fff1f1',
+    // Color applied via inline style
   },
   menuDangerText: {
-    color: '#b42318',
+    // Color applied via inline style
   },
   menuCloseButton: {
     paddingVertical: 14,
@@ -563,7 +564,6 @@ const styles = StyleSheet.create({
   menuCloseText: {
     fontSize: 15,
     fontWeight: '700',
-    color: '#007bff',
   },
   cardContent: {
     flex: 1,
@@ -579,7 +579,6 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
     justifyContent: 'center',
   },
   modalTitle: {
@@ -594,13 +593,11 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
     padding: 10,
     marginBottom: 15,
     borderRadius: 5,
   },
   saveButton: {
-    backgroundColor: '#007bff',
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
@@ -609,20 +606,18 @@ const styles = StyleSheet.create({
   saveButtonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: '600',
   },
   cancelButton: {
-    backgroundColor: '#ccc',
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
   },
   cancelButtonText: {
-    color: '#000',
     fontSize: 16,
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: '#ccc',
     borderRadius: 5,
     marginBottom: 15,
   },
