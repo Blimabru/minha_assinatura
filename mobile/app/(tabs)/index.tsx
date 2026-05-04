@@ -10,13 +10,13 @@ import { Text, View } from '@/components/Themed';
 
 // Hook reativo que já alimenta a dashboard.
 import { useSubscriptions, type SubscriptionItem } from '@/database/hooks/useSubscriptions';
-import SearchBar from '@/components/UI/SearchBar';
+import SearchBar from '../../src/components/UI/SearchBar';
 import { formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/utils/formatCurrency';
-import { useTopAlert } from '../../src/hooks/useTopAlert.tsx';
+import { useTopAlert } from '../../src/hooks/useTopAlert';
 
 // Ícones
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import CardItem from '@/components/UI/CardItem';
+import CardItem from '../../src/components/UI/CardItem';
 
 // Tela principal da aba Dashboard.
 export default function TabOneScreen() {
