@@ -13,10 +13,12 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Badge from './Badge';
+import { formatCurrencyByCode } from '../../utils/formatCurrency';
 
 interface Props {
   id: string;
   serviceName: string;
+  iconName?: string;
   value: number;
   currency: string;
   billingDate: number;
@@ -25,18 +27,20 @@ interface Props {
   onEdit?: () => void;
 }
 
-export const CardItem: React.FC<Props> = ({ serviceName, value, currency, billingDate, isActive, onPress, onEdit }) => {
+export const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', value, currency, billingDate, isActive, onPress, onEdit }) => {
+  const formattedValue = formatCurrencyByCode(value, currency);
+
   // Componente visual que aplica o layout do design: ícone + texto + ações
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.left}> 
         <View style={styles.iconPlaceholder}>
-          <FontAwesome name="music" size={22} color="#8b5cf6" />
+          <FontAwesome name={iconName as any} size={22} color="#8b5cf6" />
         </View>
         <View style={styles.info}>
           <Text style={styles.title}>{serviceName}</Text>
           <Text style={styles.subtitle}>Mensal</Text>
-          <Text style={styles.price}>{currency} {value.toFixed(2)}</Text>
+          <Text style={styles.price}>{formattedValue}</Text>
         </View>
       </View>
 

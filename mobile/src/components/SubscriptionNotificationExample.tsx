@@ -166,7 +166,7 @@ export const SubscriptionNotificationIntegration: React.FC = () => {
           editable={!isLoading}
         />
 
-        <Text style={styles.label}>Preço (R$)</Text>
+        <Text style={styles.label}>Preço</Text>
         <TextInput
           style={styles.input}
           placeholder="Ex: 34.90"

@@ -20,6 +20,7 @@ export type SubscriptionItem = {
     isActive: boolean; // Se assinatura está ativa.
     categoryId: string; // ID da categoria.
     categoryName: string; // Nome da categoria.
+    categoryIcon: string; // Ícone da categoria para renderização na UI.
 };
 
 // Hook customizado para centralizar leitura de assinaturas.
@@ -65,6 +66,7 @@ export function useSubscriptions() {
                     isActive: row.isActive,
                     categoryId: row.categoryId,
                     categoryName: category.name,
+                    categoryIcon: category.icon,
                 };
             }));
 
@@ -114,6 +116,7 @@ export function useSubscriptions() {
                 isActive: row.isActive,
                 categoryId: row.categoryId,
                 categoryName: category.name,
+                categoryIcon: category.icon,
             };
         } catch (error) {
             console.error("Erro ao buscar assinatura:", error);
