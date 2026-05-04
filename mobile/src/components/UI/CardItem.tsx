@@ -13,6 +13,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Badge from './Badge';
+import { formatCurrencyByCode } from '../../utils/formatCurrency';
 
 interface Props {
   id: string;
@@ -27,6 +28,8 @@ interface Props {
 }
 
 export const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', value, currency, billingDate, isActive, onPress, onEdit }) => {
+  const formattedValue = formatCurrencyByCode(value, currency);
+
   // Componente visual que aplica o layout do design: ícone + texto + ações
   return (
     <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.8}>
@@ -37,7 +40,7 @@ export const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', val
         <View style={styles.info}>
           <Text style={styles.title}>{serviceName}</Text>
           <Text style={styles.subtitle}>Mensal</Text>
-          <Text style={styles.price}>{currency} {value.toFixed(2)}</Text>
+          <Text style={styles.price}>{formattedValue}</Text>
         </View>
       </View>
 

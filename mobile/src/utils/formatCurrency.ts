@@ -33,3 +33,22 @@ export function parseCurrencyStringToNumber(formatted: string): number {
   const n = parseFloat(cleaned);
   return Number.isFinite(n) ? n : 0;
 }
+
+export function formatCurrencyByCode(value: number, currencyCode: string, locale = 'pt-BR'): string {
+  const normalizedCurrency = (currencyCode || 'BRL').toUpperCase();
+
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: normalizedCurrency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  } catch {
+    const fallbackValue = new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+    return `${normalizedCurrency} ${fallbackValue}`;
+  }
+}

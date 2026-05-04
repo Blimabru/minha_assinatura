@@ -201,7 +201,7 @@ export const SubscriptionFormExample: React.FC<SubscriptionFormExampleProps> = (
 
         {/* Preço */}
         <View style={styles.formGroup}>
-          <Text style={styles.label}>Preço (R$) *</Text>
+          <Text style={styles.label}>Preço *</Text>
           <TextInput
             style={styles.input}
             placeholder="Ex: 34.90"

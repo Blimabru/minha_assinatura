@@ -4,12 +4,14 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 // 1. IMPORTANDO O HOOK DO SEU DATABASE
 import { useSubscriptions } from '@/database/hooks/useSubscriptions';
+import { formatCurrencyInput, parseCurrencyStringToNumber } from '../src/utils/formatCurrency';
 
 export default function EditSubscriptionScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams(); 
 
   const [valor, setValor] = useState('');
+  const [moeda, setMoeda] = useState('BRL');
   const [dataVencimento, setDataVencimento] = useState('');
 
   // 2. EXTRAINDO AS FUNÇÕES DO SEU HOOK
@@ -21,7 +23,8 @@ export default function EditSubscriptionScreen() {
     const assinaturaId = Array.isArray(id) ? id[0] : id; 
     const assinatura = await getSubscriptionById(assinaturaId);
     if (assinatura) {
-      setValor(String(assinatura.value)); 
+      setValor(formatCurrencyInput(String(Math.round(assinatura.value * 100))));
+      setMoeda(assinatura.currency || 'BRL');
       setDataVencimento(String(assinatura.billingDate));
     }
   } catch (error) {
@@ -47,7 +50,7 @@ useEffect(() => {
       
       // 4. USANDO A FUNÇÃO DE ATUALIZAÇÃO
       await updateSubscription(assinaturaId, {
-        value: parseFloat(valor),
+        value: parseCurrencyStringToNumber(valor),
         billingDate: parseInt(dataVencimento, 10) 
       });
       
@@ -63,13 +66,13 @@ useEffect(() => {
     <View style={styles.container}>
       <Text style={styles.title}>Editar Assinatura</Text>
 
-      <Text style={styles.label}>Valor (R$)</Text>
+      <Text style={styles.label}>Valor ({moeda})</Text>
       <TextInput
         style={styles.input}
         value={valor}
-        onChangeText={setValor}
+        onChangeText={(text) => setValor(formatCurrencyInput(text))}
         keyboardType="numeric"
-        placeholder="Ex: 39.90"
+        placeholder="Ex: 39,90"
       />
 
       <Text style={styles.label}>Data de Vencimento (Dia)</Text>

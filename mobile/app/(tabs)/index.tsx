@@ -46,7 +46,7 @@ export default function TabOneScreen() {
   function openEditModal(subscription: SubscriptionItem) {
     setSelectedSubscription(subscription);
     setEditServiceName(subscription.serviceName);
-    setEditValue(formatCurrencyInput(subscription.value.toFixed(2).replace('.', ',')));
+    setEditValue(formatCurrencyInput(String(Math.round(subscription.value * 100))));
     setEditCurrency(subscription.currency);
     setEditBillingDate(subscription.billingDate.toString());
     setEditCategoryId(subscription.categoryId);
@@ -248,15 +248,6 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: 12,
-  },
-  card: {
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#d9d9d9',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   cardContent: {
     flex: 1,
