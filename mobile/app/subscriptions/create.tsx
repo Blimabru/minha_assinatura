@@ -19,7 +19,6 @@ import {
 } from '../../src/utils/subscriptionSchedule';
 
 // Componentes de formulário (usando React Native nativo)
-import { View as RNView } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 // Tipo para dados do formulário
@@ -149,7 +148,7 @@ export default function CreateSubscriptionScreen() {
     };
 
     load();
-  }, []);
+  }, [showError]);
 
   // Validar campos obrigatórios
   function validateForm(): boolean {
