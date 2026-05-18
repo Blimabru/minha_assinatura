@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 // 1. IMPORTANDO O HOOK DO SEU DATABASE
@@ -7,6 +8,12 @@ import { useSubscriptions } from '@/database/hooks/useSubscriptions';
 import { formatCurrencyInput, parseCurrencyStringToNumber } from '../src/utils/formatCurrency';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
+import {
+  buildSubscriptionDueDate,
+  splitSubscriptionDueDate,
+  SUBSCRIPTION_RECURRENCE_OPTIONS,
+  type SubscriptionRecurrence,
+} from '../src/utils/subscriptionSchedule';
 
 export default function EditSubscriptionScreen() {
   const router = useRouter();
@@ -16,7 +23,10 @@ export default function EditSubscriptionScreen() {
 
   const [valor, setValor] = useState('');
   const [moeda, setMoeda] = useState('BRL');
-  const [dataVencimento, setDataVencimento] = useState('');
+  const [recurrence, setRecurrence] = useState<SubscriptionRecurrence>('mensal');
+  const [dueDay, setDueDay] = useState('');
+  const [dueMonth, setDueMonth] = useState('');
+  const [dueYear, setDueYear] = useState('');
 
   // 2. EXTRAINDO AS FUNÇÕES DO SEU HOOK
   // (Atenção: verifique se os nomes das funções dentro do seu useSubscription.ts são exatamente esses)
@@ -29,7 +39,11 @@ export default function EditSubscriptionScreen() {
     if (assinatura) {
       setValor(formatCurrencyInput(String(Math.round(assinatura.value * 100))));
       setMoeda(assinatura.currency || 'BRL');
-      setDataVencimento(String(assinatura.billingDate));
+      setRecurrence(assinatura.recurrence);
+      const dueDateParts = splitSubscriptionDueDate(assinatura.dueDate);
+      setDueDay(dueDateParts.day || String(assinatura.billingDate).padStart(2, '0'));
+      setDueMonth(dueDateParts.month || String(new Date().getMonth() + 1).padStart(2, '0'));
+      setDueYear(dueDateParts.year || String(new Date().getFullYear()));
     }
   } catch (error) {
     console.error(error);
@@ -44,8 +58,14 @@ useEffect(() => {
 }, [id, carregarDadosDaAssinatura]);
 
   const handleSalvar = async () => {
-    if (!valor || !dataVencimento) {
+    if (!valor || !dueDay || !dueMonth || !dueYear) {
       Alert.alert('Aviso', 'Preencha todos os campos!');
+      return;
+    }
+
+    const dueDate = buildSubscriptionDueDate(dueDay, dueMonth, dueYear);
+    if (!dueDate) {
+      Alert.alert('Aviso', 'Data de vencimento inválida.');
       return;
     }
 
@@ -55,7 +75,9 @@ useEffect(() => {
       // 4. USANDO A FUNÇÃO DE ATUALIZAÇÃO
       await updateSubscription(assinaturaId, {
         value: parseCurrencyStringToNumber(valor),
-        billingDate: parseInt(dataVencimento, 10) 
+        billingDate: parseInt(dueDay, 10),
+        recurrence,
+        dueDate,
       });
       
       Alert.alert('Sucesso', 'Assinatura atualizada!');
@@ -80,15 +102,49 @@ useEffect(() => {
         placeholderTextColor={colors.textTertiary}
       />
 
-      <Text style={[styles.label, { color: colors.text }]}>Data de Vencimento (Dia)</Text>
-      <TextInput
-        style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
-        value={dataVencimento}
-        onChangeText={setDataVencimento}
-        keyboardType="numeric"
-        placeholder="Ex: 15"
-        placeholderTextColor={colors.textTertiary}
-      />
+      <Text style={[styles.label, { color: colors.text }]}>Recorrência</Text>
+      <View style={[styles.pickerWrapper, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}>
+        <Picker
+          selectedValue={recurrence}
+          onValueChange={(value: SubscriptionRecurrence) => setRecurrence(value)}
+          style={[styles.picker, { color: colors.text }]}
+        >
+          {SUBSCRIPTION_RECURRENCE_OPTIONS.map((option) => (
+            <Picker.Item key={option.value} label={option.label} value={option.value} />
+          ))}
+        </Picker>
+      </View>
+
+      <Text style={[styles.label, { color: colors.text }]}>Vencimento (dia / mês / ano)</Text>
+      <View style={styles.dueDateRow}>
+        <TextInput
+          style={[styles.input, styles.dueDateInput, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
+          value={dueDay}
+          onChangeText={setDueDay}
+          keyboardType="numeric"
+          placeholder="DD"
+          placeholderTextColor={colors.textTertiary}
+          maxLength={2}
+        />
+        <TextInput
+          style={[styles.input, styles.dueDateInput, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
+          value={dueMonth}
+          onChangeText={setDueMonth}
+          keyboardType="numeric"
+          placeholder="MM"
+          placeholderTextColor={colors.textTertiary}
+          maxLength={2}
+        />
+        <TextInput
+          style={[styles.input, styles.dueDateYearInput, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
+          value={dueYear}
+          onChangeText={setDueYear}
+          keyboardType="numeric"
+          placeholder="AAAA"
+          placeholderTextColor={colors.textTertiary}
+          maxLength={4}
+        />
+      </View>
 
       <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint }]} onPress={handleSalvar}>
         <Text style={styles.buttonText}>Salvar Alterações</Text>
@@ -117,6 +173,28 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     marginBottom: 20,
+  },
+  dueDateRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  dueDateInput: {
+    flex: 1,
+    textAlign: 'center',
+  },
+  dueDateYearInput: {
+    flex: 1.4,
+    textAlign: 'center',
+  },
+  pickerWrapper: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  picker: {
+    height: 50,
+    width: '100%',
   },
   button: {
     padding: 15,

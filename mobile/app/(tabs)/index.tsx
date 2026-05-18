@@ -15,6 +15,12 @@ import { formatCurrencyByCode, formatCurrencyInput, parseCurrencyStringToNumber 
 import { useTopAlert } from '../../src/hooks/useTopAlert';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
+import {
+  buildSubscriptionDueDate,
+  splitSubscriptionDueDate,
+  SUBSCRIPTION_RECURRENCE_OPTIONS,
+  type SubscriptionRecurrence,
+} from '../../src/utils/subscriptionSchedule';
 
 // Ícones
 import CardItem from '../../src/components/UI/CardItem';
@@ -26,7 +32,7 @@ export default function TabOneScreen() {
   const colors = Colors[colorScheme ?? 'light'];
 
   // Dados derivados do banco (reativos).
-  const { loading, items, activeSubscriptions, monthlyTotal, totalExpenses, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
+  const { loading, items, totalExpenses, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
 
   // Estados para busca/filtragem (movido de subscriptions.tsx)
   const [query, setQuery] = useState('');
@@ -52,9 +58,6 @@ export default function TabOneScreen() {
     );
   }, [items]);
 
-  const totalSubscriptionsCount = items.length;
-  const activeSubscriptionsCount = activeSubscriptions.length;
-
   const chartData = useMemo(() => {
     const entries = [
       { key: 'active' as const, label: 'Ativas', color: colors.chartActive },
@@ -78,8 +81,11 @@ export default function TabOneScreen() {
   const [editServiceName, setEditServiceName] = useState('');
   const [editValue, setEditValue] = useState('');
   const [editCurrency, setEditCurrency] = useState('');
-  const [editBillingDate, setEditBillingDate] = useState('');
   const [editCategoryId, setEditCategoryId] = useState('');
+  const [editRecurrence, setEditRecurrence] = useState<SubscriptionRecurrence>('mensal');
+  const [editDueDay, setEditDueDay] = useState('');
+  const [editDueMonth, setEditDueMonth] = useState('');
+  const [editDueYear, setEditDueYear] = useState('');
 
   // Função para abrir modal de edição
   function openEditModal(subscription: SubscriptionItem) {
@@ -87,8 +93,12 @@ export default function TabOneScreen() {
     setEditServiceName(subscription.serviceName);
     setEditValue(formatCurrencyInput(String(Math.round(subscription.value * 100))));
     setEditCurrency(subscription.currency);
-    setEditBillingDate(subscription.billingDate.toString());
     setEditCategoryId(subscription.categoryId);
+    setEditRecurrence(subscription.recurrence);
+    const dueDateParts = splitSubscriptionDueDate(subscription.dueDate);
+    setEditDueDay(dueDateParts.day || subscription.billingDate.toString().padStart(2, '0'));
+    setEditDueMonth(dueDateParts.month || String(new Date().getMonth() + 1).padStart(2, '0'));
+    setEditDueYear(dueDateParts.year || String(new Date().getFullYear()));
     setModalVisible(true);
   }
 
@@ -106,7 +116,6 @@ export default function TabOneScreen() {
     if (!selectedSubscription) return;
 
     const newValue = parseCurrencyStringToNumber(editValue);
-    const newBillingDate = parseInt(editBillingDate);
 
     if (!editServiceName.trim()) {
       showError('Nome do serviço é obrigatório.');
@@ -123,8 +132,14 @@ export default function TabOneScreen() {
       return;
     }
 
-    if (isNaN(newBillingDate) || newBillingDate < 1 || newBillingDate > 31) {
-      showError('Data de vencimento deve ser um dia válido (1-31).');
+    if (!editRecurrence) {
+      showError('Recorrência é obrigatória.');
+      return;
+    }
+
+    const dueDate = buildSubscriptionDueDate(editDueDay, editDueMonth, editDueYear);
+    if (!dueDate) {
+      showError('Data de vencimento deve ser uma data válida.');
       return;
     }
 
@@ -138,8 +153,10 @@ export default function TabOneScreen() {
         serviceName: editServiceName.trim(),
         value: newValue,
         currency: editCurrency.trim(),
-        billingDate: newBillingDate,
+        billingDate: parseInt(editDueDay, 10),
         categoryId: editCategoryId,
+        recurrence: editRecurrence,
+        dueDate,
       });
       showSuccess('Assinatura atualizada com sucesso.');
       setModalVisible(false);
@@ -275,6 +292,8 @@ export default function TabOneScreen() {
             currency={item.currency}
             billingDate={item.billingDate}
             status={item.status}
+            recurrence={item.recurrence}
+            dueDate={item.dueDate}
             onPress={() => openEditModal(item)}
             onMenuPress={() => openActionMenu(item)}
           />
@@ -352,15 +371,49 @@ export default function TabOneScreen() {
                 placeholderTextColor={colors.textTertiary}
               />
 
-              <Text style={[styles.modalLabel, { color: colors.text }]}>Dia de Vencimento:</Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
-                value={editBillingDate}
-                onChangeText={setEditBillingDate}
-                keyboardType="numeric"
-                placeholder="Ex: 10"
-                placeholderTextColor={colors.textTertiary}
-              />
+              <Text style={[styles.modalLabel, { color: colors.text }]}>Recorrência:</Text>
+              <View style={[styles.pickerContainer, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}>
+                <Picker
+                  selectedValue={editRecurrence}
+                  onValueChange={(itemValue: SubscriptionRecurrence) => setEditRecurrence(itemValue)}
+                  style={[styles.picker, { color: colors.text }]}
+                >
+                  {SUBSCRIPTION_RECURRENCE_OPTIONS.map((option) => (
+                    <Picker.Item key={option.value} label={option.label} value={option.value} />
+                  ))}
+                </Picker>
+              </View>
+
+              <Text style={[styles.modalLabel, { color: colors.text }]}>Vencimento (dia / mês / ano):</Text>
+              <View style={styles.dueDateRow}>
+                <TextInput
+                  style={[styles.input, styles.dueDateInput, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
+                  value={editDueDay}
+                  onChangeText={setEditDueDay}
+                  keyboardType="numeric"
+                  placeholder="DD"
+                  placeholderTextColor={colors.textTertiary}
+                  maxLength={2}
+                />
+                <TextInput
+                  style={[styles.input, styles.dueDateInput, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
+                  value={editDueMonth}
+                  onChangeText={setEditDueMonth}
+                  keyboardType="numeric"
+                  placeholder="MM"
+                  placeholderTextColor={colors.textTertiary}
+                  maxLength={2}
+                />
+                <TextInput
+                  style={[styles.input, styles.dueDateYearInput, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
+                  value={editDueYear}
+                  onChangeText={setEditDueYear}
+                  keyboardType="numeric"
+                  placeholder="AAAA"
+                  placeholderTextColor={colors.textTertiary}
+                  maxLength={4}
+                />
+              </View>
 
               <Text style={[styles.modalLabel, { color: colors.text }]}>Categoria:</Text>
               <View style={[styles.pickerContainer, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}>
@@ -596,6 +649,21 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 15,
     borderRadius: 5,
+  },
+  dueDateRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 15,
+  },
+  dueDateInput: {
+    flex: 1,
+    marginBottom: 0,
+    textAlign: 'center',
+  },
+  dueDateYearInput: {
+    flex: 1.4,
+    marginBottom: 0,
+    textAlign: 'center',
   },
   saveButton: {
     padding: 15,

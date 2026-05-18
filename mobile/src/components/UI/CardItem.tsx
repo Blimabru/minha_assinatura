@@ -17,6 +17,7 @@ import { formatCurrencyByCode } from '../../utils/formatCurrency';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import type { SubscriptionStatus } from '@/database/hooks/useSubscriptions';
+import { formatSubscriptionDueDate, getSubscriptionRecurrenceLabel, type SubscriptionRecurrence } from '../../utils/subscriptionSchedule';
 
 interface Props {
   id: string;
@@ -26,17 +27,20 @@ interface Props {
   currency: string;
   billingDate: number;
   status: SubscriptionStatus;
+  recurrence: SubscriptionRecurrence;
+  dueDate?: string;
   onPress?: () => void;
   onMenuPress?: () => void;
 }
 
-export const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', value, currency, billingDate, status, onPress, onMenuPress }) => {
+export const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', value, currency, billingDate, status, recurrence, dueDate, onPress, onMenuPress }) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const formattedValue = formatCurrencyByCode(value, currency);
   const badgeText = status === 'inactive' ? 'Inativa' : status === 'cancelled' ? 'Cancelada' : '';
   const badgeColor = status === 'inactive' ? colors.inactiveBg : colors.cancelledBg;
   const badgeTextColor = status === 'inactive' ? colors.inactiveText : colors.cancelledText;
+  const scheduleLabel = `${getSubscriptionRecurrenceLabel(recurrence)} • ${formatSubscriptionDueDate(dueDate, billingDate)}`;
 
   // Componente visual que aplica o layout do design: ícone + texto + ações
   return (
@@ -51,7 +55,7 @@ export const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', val
         </View>
         <View style={styles.info}>
           <Text style={[styles.title, { color: colors.text }]}>{serviceName}</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Mensal</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{scheduleLabel}</Text>
           <Text style={[styles.price, { color: colors.text }]}>{formattedValue}</Text>
         </View>
       </View>
