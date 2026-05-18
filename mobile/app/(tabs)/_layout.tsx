@@ -25,12 +25,27 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.tint,
         headerShown: useClientOnlyValue(false, true),
         tabBarShowLabel: true,
+        tabBarStyle: { backgroundColor: colors.backgroundSecondary, borderTopColor: colors.cardBorder },
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Início',
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
+          headerRight: () => (
+            <Pressable
+              onPress={() => router.push('/discounts-page')}
+              style={({ pressed }) => ({
+                marginRight: 12,
+                opacity: pressed ? 0.7 : 1,
+                padding: 6,
+                borderRadius: 8,
+                backgroundColor: '#FF6B00',
+              })}
+            >
+              <FontAwesome name="tags" size={20} color="#fff" />
+            </Pressable>
+          ),
         }}
       />
 

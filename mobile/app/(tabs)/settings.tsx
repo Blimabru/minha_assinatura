@@ -19,16 +19,16 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}> 
-      <Text style={[styles.title, { color: colors.text }]}>Settings</Text>
+      <Text style={[styles.title, { color: colors.text }]}>Configurações</Text>
 
       <View style={[styles.row, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
         <Text style={[styles.label, { color: colors.text }]}>Otimização de Bateria</Text>
-        <Switch value={true} onValueChange={() => {}} />
+        <Switch value={true} onValueChange={() => {}} trackColor={{ false: colors.inputBackground, true: colors.tint }} thumbColor={colors.textInverse} />
       </View>
 
       <View style={[styles.row, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
         <Text style={[styles.label, { color: colors.text }]}>Notificações</Text>
-        <Switch value={true} onValueChange={() => {}} />
+        <Switch value={true} onValueChange={() => {}} trackColor={{ false: colors.inputBackground, true: colors.tint }} thumbColor={colors.textInverse} />
       </View>
     </View>
   );

@@ -217,11 +217,11 @@ export default function TabOneScreen() {
             <TopAlert />
 
             <View style={styles.summaryGrid}>
-              <View style={[styles.summaryCard, styles.summaryCardPrimary, { backgroundColor: colors.backgroundSecondary }]}>
-                <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Gasto total</Text>
-                <Text style={[styles.summaryValue, { color: colors.text }]}>{formatCurrencyByCode(totalExpenses, 'BRL')}</Text>
-                <Text style={[styles.summaryHint, { color: colors.textTertiary }]}>Somando todas as assinaturas</Text>
-              </View>
+              <View style={[styles.summaryCard, styles.summaryCardPrimary, { backgroundColor: colors.tint }]}>
+                  <Text style={[styles.summaryLabel, { color: colors.textInverse }]}>Gasto total</Text>
+                  <Text style={[styles.summaryValue, { color: colors.textInverse }]}>{formatCurrencyByCode(totalExpenses, 'BRL')}</Text>
+                  <Text style={[styles.summaryHint, { color: colors.textInverse }]}>Somando todas as assinaturas</Text>
+                </View>
 
               <View style={styles.summaryRow}>
                 <View style={[styles.summaryMiniCard, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>

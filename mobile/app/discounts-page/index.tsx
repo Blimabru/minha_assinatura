@@ -72,17 +72,19 @@ export default function DiscountsScreen() {
   }, [searchQuery]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}> 
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Cupons & Afiliados</Text>
-        <Text style={styles.headerSubtitle}>Economize em suas assinaturas</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Cupons & Afiliados</Text>
+        <Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Economize em suas assinaturas</Text>
       </View>
 
-      <SearchBar
-        placeholder="Buscar descontos..."
-        onChangeText={setSearchQuery}
-        value={searchQuery}
-      />
+      <View style={{ paddingHorizontal: 16 }}>
+        <SearchBar
+          placeholder="Buscar descontos..."
+          onChange={setSearchQuery}
+          value={searchQuery}
+        />
+      </View>
 
       <FlatList
         data={filteredDiscounts}
@@ -90,10 +92,10 @@ export default function DiscountsScreen() {
         keyExtractor={(item) => item.id}
         scrollEnabled={true}
         contentContainerStyle={styles.listContent}
-        ListEmptyState={
+        ListEmptyComponent={
           <View style={styles.emptyState}>
-            <FontAwesome name="inbox" size={48} color={colors.tabIconDefault} />
-            <Text style={styles.emptyStateText}>Nenhum desconto encontrado</Text>
+            <FontAwesome name="inbox" size={48} color={colors.iconSecondary} />
+            <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>Nenhum desconto encontrado</Text>
           </View>
         }
       />
@@ -111,16 +113,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 4,
+    fontSize: 26,
+    fontWeight: '800',
+    marginBottom: 6,
   },
   headerSubtitle: {
     fontSize: 14,
-    opacity: 0.6,
+    opacity: 0.75,
   },
   listContent: {
     paddingBottom: 20,
+    paddingHorizontal: 16,
   },
   emptyState: {
     justifyContent: 'center',

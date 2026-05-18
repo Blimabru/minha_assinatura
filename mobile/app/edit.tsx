@@ -147,7 +147,7 @@ useEffect(() => {
       </View>
 
       <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint }]} onPress={handleSalvar}>
-        <Text style={styles.buttonText}>Salvar Alterações</Text>
+        <Text style={[styles.buttonText, { color: colors.textInverse }]}>Salvar Alterações</Text>
       </TouchableOpacity>
     </View>
   );

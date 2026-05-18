@@ -35,15 +35,24 @@ export default function DiscountCard({
 
   const handleCopyCode = () => {
     if (discountCode) {
-      // Aqui você pode implementar a lógica de copiar para clipboard
-      Alert.alert('Cupom Copiado!', `Código: ${discountCode}`);
+      Alert.alert('Copiar cupom', 'Toque e segure o código para copiar manualmente.');
     }
   };
 
   return (
-    <View style={[styles.container, { borderColor: colors.tabIconDefault }]}>
+    <View
+      style={[
+        styles.container,
+        {
+          backgroundColor: colors.cardBackground,
+          borderColor: colors.cardBorder,
+          shadowColor: colors.shadowColor,
+          elevation: 3,
+        },
+      ]}
+    >
       <View style={styles.header}>
-        <Text style={styles.serviceName}>{serviceName}</Text>
+        <Text style={[styles.serviceName, { color: colors.text }]}>{serviceName}</Text>
         {discountPercentage && (
           <View style={[styles.badge, { backgroundColor: colors.tint }]}>
             <Text style={styles.badgeText}>{discountPercentage}% OFF</Text>
@@ -51,7 +60,7 @@ export default function DiscountCard({
         )}
       </View>
 
-      <Text style={styles.description}>{description}</Text>
+      <Text style={[styles.description, { color: colors.textSecondary }]}>{description}</Text>
 
       <View style={styles.codeSection}>
         {discountCode && (
@@ -60,7 +69,7 @@ export default function DiscountCard({
             onPress={handleCopyCode}
           >
             <FontAwesome name="copy" size={14} color={colors.tint} />
-            <Text style={[styles.codeText, { color: colors.tint }]}>{discountCode}</Text>
+            <Text selectable style={[styles.codeText, { color: colors.tint }]}>{discountCode}</Text>
           </Pressable>
         )}
       </View>
@@ -68,7 +77,7 @@ export default function DiscountCard({
       <View style={styles.buttonsContainer}>
         {affiliateLink && (
           <Pressable
-            style={[styles.button, styles.affiliateButton, { borderColor: colors.tint }]}
+            style={[styles.button, styles.affiliateButton, { borderColor: colors.tint, backgroundColor: 'transparent' }]}
             onPress={() => handleOpenLink(affiliateLink)}
           >
             <FontAwesome name="link" size={14} color={colors.tint} />
@@ -93,7 +102,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
     borderWidth: 1,
-    marginHorizontal: 16,
+    // width controlled by parent FlatList padding
   },
   header: {
     flexDirection: 'row',

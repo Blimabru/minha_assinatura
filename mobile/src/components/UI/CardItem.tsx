@@ -45,7 +45,7 @@ const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', value, cur
   // Componente visual que aplica o layout do design: ícone + texto + ações
   return (
     <TouchableOpacity 
-      style={[styles.container, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]} 
+      style={[styles.container, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder, shadowColor: colors.shadowColor, elevation: 3 }]} 
       onPress={onPress} 
       activeOpacity={0.8}
     >
@@ -74,18 +74,17 @@ const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', value, cur
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 14,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    borderWidth: 0,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 4,
   },
   left: { flexDirection: 'row', alignItems: 'center', flex: 1 },
   iconPlaceholder: {
