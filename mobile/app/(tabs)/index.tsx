@@ -7,6 +7,9 @@ import { Picker } from '@react-native-picker/picker';
 
 // Componentes tematizados do projeto.
 import { Text, View } from '@/components/Themed';
+import Colors from '@/constants/Colors';
+import { useColorScheme } from '@/components/useColorScheme';
+import { useRouter } from 'expo-router';
 
 // Hook reativo que já alimenta a dashboard.
 import { useSubscriptions, type SubscriptionItem, type SubscriptionStatus } from '@/database/hooks/useSubscriptions';
@@ -26,6 +29,9 @@ import CardItem from '../../src/components/UI/CardItem';
 // Tela principal da aba Dashboard.
 export default function TabOneScreen() {
   const { TopAlert, showError, showSuccess } = useTopAlert();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  const router = useRouter();
 
   // Dados derivados do banco (reativos).
   const { loading, items, totalExpenses, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
@@ -248,7 +254,51 @@ export default function TabOneScreen() {
               </View>
             </View>
 
-            <SearchBar value={query} onChange={setQuery} placeholder="Buscar assinaturas..." />
+            <View style={styles.discountsSection}>
+              <View style={styles.discountsHeader}>
+                <Text style={styles.sectionTitle}>Cupons & Afiliados</Text>
+                <Pressable onPress={() => router.push('/discounts-page')}>
+                  <Text style={[styles.sectionTitle, { color: colors.tint, fontSize: 14 }]}>Ver tudo</Text>
+                </Pressable>
+              </View>
+              <Text style={styles.discountsSubtitle}>Economize em suas assinaturas</Text>
+              <View style={styles.discountsGrid}>
+                <Pressable 
+                  style={[styles.discountPreview, { borderColor: colors.tint }]}
+                  onPress={() => router.push('/(tabs)/discounts')}
+                >
+                  <View style={[styles.discountIcon, { backgroundColor: colors.tint }]}>
+                    <Text style={styles.discountIconText}>15% OFF</Text>
+                  </View>
+                  <Text style={styles.discountName}>Netflix</Text>
+                  <Text style={styles.discountCode}>SAVE15</Text>
+                </Pressable>
+
+                <Pressable 
+                  style={[styles.discountPreview, { borderColor: colors.tint }]}
+                  onPress={() => router.push('/discounts-page')}
+                >
+                  <View style={[styles.discountIcon, { backgroundColor: colors.tint }]}>
+                    <Text style={styles.discountIconText}>20% OFF</Text>
+                  </View>
+                  <Text style={styles.discountName}>Spotify</Text>
+                  <Text style={styles.discountCode}>SAVE20</Text>
+                </Pressable>
+
+                <Pressable 
+                  style={[styles.discountPreview, { borderColor: colors.tint }]}
+                  onPress={() => router.push('/discounts-page')}
+                >
+                  <View style={[styles.discountIcon, { backgroundColor: colors.tint }]}>
+                    <Text style={styles.discountIconText}>30% OFF</Text>
+                  </View>
+                  <Text style={styles.discountName}>Adobe</Text>
+                  <Text style={styles.discountCode}>CREATIVE30</Text>
+                </Pressable>
+              </View>
+            </View>
+
+            <SearchBar value={query} onChangeText={setQuery} placeholder="Buscar assinaturas..." />
             <View style={styles.filters}>
               {[
                 { label: 'Todas', value: 'all' },
@@ -695,5 +745,57 @@ const styles = StyleSheet.create({
   picker: {
     height: 50,
     width: '100%',
+  },
+  discountsSection: {
+    marginTop: 24,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  discountsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  discountsSubtitle: {
+    fontSize: 13,
+    opacity: 0.6,
+    marginBottom: 12,
+  },
+  discountsGrid: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  discountPreview: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
+  discountIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  discountIconText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  discountName: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  discountCode: {
+    fontSize: 10,
+    color: '#999',
+    textAlign: 'center',
   },
 });
