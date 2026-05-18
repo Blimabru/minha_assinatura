@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 
 // Componentes nativos para botão, lista e estilos.
-import { Alert, FlatList, Pressable, StyleSheet, Modal, TouchableOpacity, TextInput } from 'react-native';
+import { Alert, FlatList, Pressable, StyleSheet, Modal, TextInput } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 
 // Componentes tematizados do projeto.

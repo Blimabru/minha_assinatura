@@ -19,7 +19,7 @@ interface Props {
   placeholder?: string;
 }
 
-export const SearchBar: React.FC<Props> = ({ value, onChange, placeholder = 'Buscar assinaturas...' }) => {
+const SearchBar: React.FC<Props> = ({ value, onChange, placeholder = 'Buscar assinaturas...' }) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 

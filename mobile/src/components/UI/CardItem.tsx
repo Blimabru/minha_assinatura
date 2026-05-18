@@ -33,7 +33,7 @@ interface Props {
   onMenuPress?: () => void;
 }
 
-export const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', value, currency, billingDate, status, recurrence, dueDate, onPress, onMenuPress }) => {
+const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', value, currency, billingDate, status, recurrence, dueDate, onPress, onMenuPress }) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const formattedValue = formatCurrencyByCode(value, currency);

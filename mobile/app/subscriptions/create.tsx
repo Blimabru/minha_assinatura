@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, FlatList, Modal, Pressable } from 'react-native';
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity, FlatList, Modal, Pressable, View as RNView } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 
@@ -11,7 +11,7 @@ import type Subscription from '@/database/models/Subscription';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/utils/formatCurrency';
-import { useTopAlert } from '../../src/hooks/useTopAlert.tsx';
+import { useTopAlert } from '../../src/hooks/useTopAlert';
 import {
   buildSubscriptionDueDate,
   SUBSCRIPTION_RECURRENCE_OPTIONS,
@@ -76,80 +76,80 @@ export default function CreateSubscriptionScreen() {
 
   // Efeito para carregar categorias e usuário padrão
   useEffect(() => {
-    loadCategoriesAndUser();
-  }, []);
+    const load = async () => {
+      try {
+        const users = database.get<User>('users');
+        const categoriesCollection = database.get<Category>('categories');
 
-  async function loadCategoriesAndUser() {
-    try {
-      const users = database.get<User>('users');
-      const categoriesCollection = database.get<Category>('categories');
+        // Obtém primeiro usuário (ou cria um padrão)
+        let userList = await users.query().fetch();
 
-      // Obtém primeiro usuário (ou cria um padrão)
-      let userList = await users.query().fetch();
-
-      if (userList.length === 0) {
-        // Cria usuário padrão se não existir
-        await database.write(async () => {
-          const createdUser = await users.create((user) => {
-            user.name = 'Usuario Local';
-            user.email = 'usuario.local@minhaassinatura.app';
-            user.passwordHash = 'local_dev_only';
-            user.currencyPreference = 'BRL';
-          });
-          setCurrentUserId(createdUser.id);
-        });
-        userList = await users.query().fetch();
-      }
-
-      if (userList.length > 0) {
-        setCurrentUserId(userList[0].id);
-      }
-
-      // Carrega categorias
-      const categoriesList = await categoriesCollection.query().fetch();
-
-      if (categoriesList.length === 0) {
-        // Cria categorias padrão se não existirem
-        await database.write(async () => {
-          const defaultCategories = [
-            { name: 'Streaming', icon: 'tv' },
-            { name: 'Produtividade', icon: 'briefcase' },
-            { name: 'Música', icon: 'music' },
-            { name: 'Fitness', icon: 'heart' },
-            { name: 'Educação', icon: 'graduation-cap' },
-            { name: 'Outros', icon: 'ellipsis-h' },
-          ];
-
-          for (const cat of defaultCategories) {
-            await categoriesCollection.create((category) => {
-              category.name = cat.name;
-              category.icon = cat.icon;
+        if (userList.length === 0) {
+          // Cria usuário padrão se não existir
+          await database.write(async () => {
+            const createdUser = await users.create((user) => {
+              user.name = 'Usuario Local';
+              user.email = 'usuario.local@minhaassinatura.app';
+              user.passwordHash = 'local_dev_only';
+              user.currencyPreference = 'BRL';
             });
-          }
-        });
+            setCurrentUserId(createdUser.id);
+          });
+          userList = await users.query().fetch();
+        }
 
-        const updatedCategories = await categoriesCollection.query().fetch();
-        setCategories(
-          updatedCategories.map((cat) => ({
-            id: cat.id,
-            name: cat.name,
-            icon: cat.icon,
-          }))
-        );
-      } else {
-        setCategories(
-          categoriesList.map((cat) => ({
-            id: cat.id,
-            name: cat.name,
-            icon: cat.icon,
-          }))
-        );
+        if (userList.length > 0) {
+          setCurrentUserId(userList[0].id);
+        }
+
+        // Carrega categorias
+        const categoriesList = await categoriesCollection.query().fetch();
+
+        if (categoriesList.length === 0) {
+          // Cria categorias padrão se não existirem
+          await database.write(async () => {
+            const defaultCategories = [
+              { name: 'Streaming', icon: 'tv' },
+              { name: 'Produtividade', icon: 'briefcase' },
+              { name: 'Música', icon: 'music' },
+              { name: 'Fitness', icon: 'heart' },
+              { name: 'Educação', icon: 'graduation-cap' },
+              { name: 'Outros', icon: 'ellipsis-h' },
+            ];
+
+            for (const cat of defaultCategories) {
+              await categoriesCollection.create((category) => {
+                category.name = cat.name;
+                category.icon = cat.icon;
+              });
+            }
+          });
+
+          const updatedCategories = await categoriesCollection.query().fetch();
+          setCategories(
+            updatedCategories.map((cat) => ({
+              id: cat.id,
+              name: cat.name,
+              icon: cat.icon,
+            }))
+          );
+        } else {
+          setCategories(
+            categoriesList.map((cat) => ({
+              id: cat.id,
+              name: cat.name,
+              icon: cat.icon,
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Erro ao carregar categorias:', error);
+        showError('Não foi possível carregar as categorias.');
       }
-    } catch (error) {
-      console.error('Erro ao carregar categorias:', error);
-      showError('Não foi possível carregar as categorias.');
-    }
-  }
+    };
+
+    load();
+  }, []);
 
   // Validar campos obrigatórios
   function validateForm(): boolean {

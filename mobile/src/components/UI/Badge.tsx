@@ -17,7 +17,7 @@ interface BadgeProps {
   textColor?: string;
 }
 
-export const Badge: React.FC<BadgeProps> = ({ text, color = '#E0E0E0', textColor = '#000' }) => {
+const Badge: React.FC<BadgeProps> = ({ text, color = '#E0E0E0', textColor = '#000' }) => {
   // Renderiza um pequeno rótulo com background color e texto em negrito.
   return (
     <View style={[styles.container, { backgroundColor: color }]}> 
