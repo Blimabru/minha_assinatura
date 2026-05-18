@@ -7,7 +7,6 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
@@ -19,6 +18,7 @@ export default function TabLayout() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
+
   return (
     <Tabs
       screenOptions={{
@@ -34,12 +34,18 @@ export default function TabLayout() {
         }}
       />
 
-      {/* subscriptions tab removed */}
+      <Tabs.Screen
+        name="subscriptions"
+        options={{
+          title: 'Assinaturas',
+          tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
+        }}
+      />
 
       <Tabs.Screen
         name="create"
         options={{
-          title: 'Adicionar',
+          title: 'Novo',
           tabBarIcon: ({ color }) => <TabBarIcon name="plus" color="#fff" />,
           tabBarButton: (props) => (
             <View style={styles.fabContainer}>
@@ -57,7 +63,13 @@ export default function TabLayout() {
         }}
       />
 
-      {/* reports tab removed: content moved to index */}
+      <Tabs.Screen
+        name="reports"
+        options={{
+          title: 'Relatórios',
+          tabBarIcon: ({ color }) => <TabBarIcon name="bar-chart" color={color} />,
+        }}
+      />
 
       <Tabs.Screen
         name="settings"
