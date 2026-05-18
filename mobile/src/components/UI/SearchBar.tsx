@@ -13,11 +13,11 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 interface Props {
   value: string;
-  onChange: (v: string) => void;
+  onChangeText: (v: string) => void;
   placeholder?: string;
 }
 
-export const SearchBar: React.FC<Props> = ({ value, onChange, placeholder = 'Buscar assinaturas...' }) => {
+export const SearchBar: React.FC<Props> = ({ value, onChangeText, placeholder = 'Buscar assinaturas...' }) => {
   return (
     <View style={styles.container}>
       <FontAwesome name="search" size={16} color="#999" style={{ marginHorizontal: 8 }} />
@@ -25,7 +25,7 @@ export const SearchBar: React.FC<Props> = ({ value, onChange, placeholder = 'Bus
         placeholder={placeholder}
         style={styles.input}
         value={value}
-        onChangeText={onChange}
+        onChangeText={onChangeText}
       />
     </View>
   );
@@ -39,6 +39,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 8,
     marginVertical: 12,
+    marginHorizontal: 16,
     elevation: 1,
   },
   input: { flex: 1, paddingVertical: 6, paddingHorizontal: 4, fontSize: 14 },

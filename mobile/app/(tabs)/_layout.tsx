@@ -34,8 +34,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* subscriptions tab removed */}
-
       <Tabs.Screen
         name="create"
         options={{
@@ -57,8 +55,6 @@ export default function TabLayout() {
         }}
       />
 
-      {/* reports tab removed: content moved to index */}
-
       <Tabs.Screen
         name="settings"
         options={{
@@ -73,6 +69,7 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   fabContainer: {
     top: -18,
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
