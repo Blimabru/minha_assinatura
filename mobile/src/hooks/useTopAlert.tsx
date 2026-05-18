@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Animated, View, StyleSheet } from 'react-native';
+import { Animated, StyleSheet } from 'react-native';
 import { Text } from '@/components/Themed';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
@@ -70,10 +70,10 @@ export function useTopAlert() {
 
   // Componente TopAlert que deve ser renderizado no topo da tela
   const TopAlert = () => {
-    if (!state.isVisible) return null;
-
     const colorScheme = useColorScheme();
     const colors = Colors[colorScheme ?? 'light'];
+
+    if (!state.isVisible) return null;
 
     const bgColor =
       state.type === 'error' ? colors.error : state.type === 'warning' ? colors.warning : colors.success;
