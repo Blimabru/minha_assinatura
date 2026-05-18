@@ -395,8 +395,7 @@ export default function CreateSubscriptionScreen() {
               if (!datePickerRef.current && Platform.OS !== 'web') {
                 try {
                   // carregar dinamicamente para evitar erro de inicialização da rota
-                  // eslint-disable-next-line global-require
-                  const mod = require('@react-native-community/datetimepicker');
+                  const mod = await import('@react-native-community/datetimepicker');
                   datePickerRef.current = mod.default || mod;
                 } catch (e) {
                   console.error('Erro ao carregar DateTimePicker:', e);
