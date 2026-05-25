@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, FlatList, Modal, Pressable } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity, FlatList, Modal, Pressable, View as RNView, Platform } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 
@@ -11,7 +11,7 @@ import type Subscription from '@/database/models/Subscription';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/utils/formatCurrency';
-import { useTopAlert } from '../../src/hooks/useTopAlert.tsx';
+import { useTopAlert } from '../../src/hooks/useTopAlert';
 import {
   buildSubscriptionDueDate,
   SUBSCRIPTION_RECURRENCE_OPTIONS,
@@ -19,7 +19,6 @@ import {
 } from '../../src/utils/subscriptionSchedule';
 
 // Componentes de formulário (usando React Native nativo)
-import { View as RNView } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 // Tipo para dados do formulário
@@ -29,9 +28,9 @@ interface FormData {
   currency: string;
   categoryId: string;
   recurrence: SubscriptionRecurrence;
-  dueDay: string;
-  dueMonth: string;
-  dueYear: string;
+  realizationDay: string;
+  realizationMonth: string;
+  realizationYear: string;
 }
 
 // Tipo para categorias
@@ -56,15 +55,26 @@ export default function CreateSubscriptionScreen() {
     currency: 'BRL',
     categoryId: '',
     recurrence: 'mensal',
-    dueDay: String(new Date().getDate()).padStart(2, '0'),
-    dueMonth: String(new Date().getMonth() + 1).padStart(2, '0'),
-    dueYear: String(new Date().getFullYear()),
+    realizationDay: String(new Date().getDate()).padStart(2, '0'),
+    realizationMonth: String(new Date().getMonth() + 1).padStart(2, '0'),
+    realizationYear: String(new Date().getFullYear()),
   });
 
   // Estados de UI
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+
+  // Date picker state
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(
+    new Date(
+      parseInt(formData.realizationYear, 10) || new Date().getFullYear(),
+      (parseInt(formData.realizationMonth, 10) - 1) || new Date().getMonth(),
+      parseInt(formData.realizationDay, 10) || new Date().getDate()
+    )
+  );
+  const datePickerRef = useRef<any>(null);
 
 
 
@@ -76,80 +86,80 @@ export default function CreateSubscriptionScreen() {
 
   // Efeito para carregar categorias e usuário padrão
   useEffect(() => {
-    loadCategoriesAndUser();
-  }, []);
+    const load = async () => {
+      try {
+        const users = database.get<User>('users');
+        const categoriesCollection = database.get<Category>('categories');
 
-  async function loadCategoriesAndUser() {
-    try {
-      const users = database.get<User>('users');
-      const categoriesCollection = database.get<Category>('categories');
+        // Obtém primeiro usuário (ou cria um padrão)
+        let userList = await users.query().fetch();
 
-      // Obtém primeiro usuário (ou cria um padrão)
-      let userList = await users.query().fetch();
-
-      if (userList.length === 0) {
-        // Cria usuário padrão se não existir
-        await database.write(async () => {
-          const createdUser = await users.create((user) => {
-            user.name = 'Usuario Local';
-            user.email = 'usuario.local@minhaassinatura.app';
-            user.passwordHash = 'local_dev_only';
-            user.currencyPreference = 'BRL';
-          });
-          setCurrentUserId(createdUser.id);
-        });
-        userList = await users.query().fetch();
-      }
-
-      if (userList.length > 0) {
-        setCurrentUserId(userList[0].id);
-      }
-
-      // Carrega categorias
-      const categoriesList = await categoriesCollection.query().fetch();
-
-      if (categoriesList.length === 0) {
-        // Cria categorias padrão se não existirem
-        await database.write(async () => {
-          const defaultCategories = [
-            { name: 'Streaming', icon: 'tv' },
-            { name: 'Produtividade', icon: 'briefcase' },
-            { name: 'Música', icon: 'music' },
-            { name: 'Fitness', icon: 'heart' },
-            { name: 'Educação', icon: 'graduation-cap' },
-            { name: 'Outros', icon: 'ellipsis-h' },
-          ];
-
-          for (const cat of defaultCategories) {
-            await categoriesCollection.create((category) => {
-              category.name = cat.name;
-              category.icon = cat.icon;
+        if (userList.length === 0) {
+          // Cria usuário padrão se não existir
+          await database.write(async () => {
+            const createdUser = await users.create((user) => {
+              user.name = 'Usuario Local';
+              user.email = 'usuario.local@minhaassinatura.app';
+              user.passwordHash = 'local_dev_only';
+              user.currencyPreference = 'BRL';
             });
-          }
-        });
+            setCurrentUserId(createdUser.id);
+          });
+          userList = await users.query().fetch();
+        }
 
-        const updatedCategories = await categoriesCollection.query().fetch();
-        setCategories(
-          updatedCategories.map((cat) => ({
-            id: cat.id,
-            name: cat.name,
-            icon: cat.icon,
-          }))
-        );
-      } else {
-        setCategories(
-          categoriesList.map((cat) => ({
-            id: cat.id,
-            name: cat.name,
-            icon: cat.icon,
-          }))
-        );
+        if (userList.length > 0) {
+          setCurrentUserId(userList[0].id);
+        }
+
+        // Carrega categorias
+        const categoriesList = await categoriesCollection.query().fetch();
+
+        if (categoriesList.length === 0) {
+          // Cria categorias padrão se não existirem
+          await database.write(async () => {
+            const defaultCategories = [
+              { name: 'Streaming', icon: 'tv' },
+              { name: 'Produtividade', icon: 'briefcase' },
+              { name: 'Música', icon: 'music' },
+              { name: 'Fitness', icon: 'heart' },
+              { name: 'Educação', icon: 'graduation-cap' },
+              { name: 'Outros', icon: 'ellipsis-h' },
+            ];
+
+            for (const cat of defaultCategories) {
+              await categoriesCollection.create((category) => {
+                category.name = cat.name;
+                category.icon = cat.icon;
+              });
+            }
+          });
+
+          const updatedCategories = await categoriesCollection.query().fetch();
+          setCategories(
+            updatedCategories.map((cat) => ({
+              id: cat.id,
+              name: cat.name,
+              icon: cat.icon,
+            }))
+          );
+        } else {
+          setCategories(
+            categoriesList.map((cat) => ({
+              id: cat.id,
+              name: cat.name,
+              icon: cat.icon,
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Erro ao carregar categorias:', error);
+        showError('Não foi possível carregar as categorias.');
       }
-    } catch (error) {
-      console.error('Erro ao carregar categorias:', error);
-      showError('Não foi possível carregar as categorias.');
-    }
-  }
+    };
+
+    load();
+  }, [showError]);
 
   // Validar campos obrigatórios
   function validateForm(): boolean {
@@ -179,9 +189,13 @@ export default function CreateSubscriptionScreen() {
       return false;
     }
 
-    const dueDate = buildSubscriptionDueDate(formData.dueDay, formData.dueMonth, formData.dueYear);
+    const dueDate = buildSubscriptionDueDate(
+      formData.realizationDay,
+      formData.realizationMonth,
+      formData.realizationYear
+    );
     if (!dueDate) {
-      showError('A data de vencimento deve ser válida.');
+      showError('A data de realização deve ser válida.');
       return false;
     }
 
@@ -207,9 +221,13 @@ export default function CreateSubscriptionScreen() {
     setLoading(true);
 
     try {
-      const dueDate = buildSubscriptionDueDate(formData.dueDay, formData.dueMonth, formData.dueYear);
+      const dueDate = buildSubscriptionDueDate(
+        formData.realizationDay,
+        formData.realizationMonth,
+        formData.realizationYear
+      );
       if (!dueDate) {
-        showError('A data de vencimento deve ser válida.');
+        showError('A data de realização deve ser válida.');
         return;
       }
 
@@ -220,7 +238,7 @@ export default function CreateSubscriptionScreen() {
           subscription.serviceName = formData.serviceName.trim();
           subscription.value = parseCurrencyStringToNumber(formData.value);
           subscription.currency = formData.currency;
-          subscription.billingDate = parseInt(formData.dueDay, 10);
+          subscription.billingDate = parseInt(formData.realizationDay, 10);
           subscription.categoryId = formData.categoryId;
           subscription.userId = currentUserId;
           subscription.isActive = true;
@@ -355,41 +373,69 @@ export default function CreateSubscriptionScreen() {
           </RNView>
         </RNView>
 
-        {/* Campo: Vencimento */}
+        {/* Campo: Data de Realização da Assinatura */}
         <RNView style={styles.fieldContainer}>
-          <Text style={styles.label}>Vencimento (dia / mês / ano)</Text>
-          <RNView style={styles.dueDateRow}>
-            <TextInput
-              style={[styles.input, styles.dueDateInput, { color: colors.text, borderColor: colors.text }]}
-              placeholder="DD"
-              placeholderTextColor={colors.text}
-              value={formData.dueDay}
-              onChangeText={(text) => setFormData((prev) => ({ ...prev, dueDay: text }))}
-              keyboardType="numeric"
-              maxLength={2}
-              editable={!loading}
-            />
-            <TextInput
-              style={[styles.input, styles.dueDateInput, { color: colors.text, borderColor: colors.text }]}
-              placeholder="MM"
-              placeholderTextColor={colors.text}
-              value={formData.dueMonth}
-              onChangeText={(text) => setFormData((prev) => ({ ...prev, dueMonth: text }))}
-              keyboardType="numeric"
-              maxLength={2}
-              editable={!loading}
-            />
-            <TextInput
-              style={[styles.input, styles.dueDateYearInput, { color: colors.text, borderColor: colors.text }]}
-              placeholder="AAAA"
-              placeholderTextColor={colors.text}
-              value={formData.dueYear}
-              onChangeText={(text) => setFormData((prev) => ({ ...prev, dueYear: text }))}
-              keyboardType="numeric"
-              maxLength={4}
-              editable={!loading}
-            />
-          </RNView>
+          <Text style={styles.label}>Data de Realização da Assinatura</Text>
+          <TouchableOpacity
+            style={[
+              styles.datePickerButton,
+              {
+                borderColor: colors.tint,
+                backgroundColor: colors.background,
+                height: 48,
+                paddingHorizontal: 14,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.12,
+                shadowRadius: 6,
+                elevation: 3,
+              },
+            ]}
+            onPress={async () => {
+              if (!datePickerRef.current && Platform.OS !== 'web') {
+                try {
+                  // carregar dinamicamente para evitar erro de inicialização da rota
+                  const mod = await import('@react-native-community/datetimepicker');
+                  datePickerRef.current = mod.default || mod;
+                } catch (e) {
+                  console.error('Erro ao carregar DateTimePicker:', e);
+                  showError('Não foi possível abrir o seletor de data.');
+                  return;
+                }
+              }
+              setShowDatePicker(true);
+            }}
+            disabled={loading}
+          >
+            <Text style={[styles.dateText, { color: colors.text }]}>{`${String(selectedDate.getDate()).padStart(2, '0')} / ${String(
+              selectedDate.getMonth() + 1
+            ).padStart(2, '0')} / ${selectedDate.getFullYear()}`}</Text>
+            <FontAwesome name="calendar" size={18} color={colors.tint} />
+          </TouchableOpacity>
+          <Text style={{ color: colors.textSecondary, marginTop: 8 }}>O aplicativo calculará a data de vencimento automaticamente com base na recorrência informada.</Text>
+
+          {showDatePicker && datePickerRef.current && (() => {
+            const DP = datePickerRef.current;
+            return (
+              <DP
+                value={selectedDate}
+                mode="date"
+                display={Platform.OS === 'android' ? 'calendar' : 'default'}
+                onChange={(_event: any, date: Date | undefined) => {
+                  setShowDatePicker(Platform.OS === 'ios');
+                  if (date) {
+                    setSelectedDate(date);
+                    setFormData((prev) => ({
+                      ...prev,
+                      realizationDay: String(date.getDate()).padStart(2, '0'),
+                      realizationMonth: String(date.getMonth() + 1).padStart(2, '0'),
+                      realizationYear: String(date.getFullYear()),
+                    }));
+                  }
+                }}
+              />
+            );
+          })()}
         </RNView>
 
         {/* Campo: Categoria */}
@@ -574,6 +620,19 @@ const styles = StyleSheet.create({
   },
   dueDateYearInput: {
     flex: 1.4,
+  },
+  datePickerButton: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dateText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   selectorButton: {
     borderWidth: 1,

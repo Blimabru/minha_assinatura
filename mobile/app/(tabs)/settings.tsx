@@ -19,16 +19,16 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}> 
-      <Text style={styles.title}>Settings</Text>
+      <Text style={[styles.title, { color: colors.text }]}>Configurações</Text>
 
-      <View style={styles.row}>
-        <Text style={styles.label}>Otimização de Bateria</Text>
-        <Switch value={true} onValueChange={() => {}} />
+      <View style={[styles.row, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
+        <Text style={[styles.label, { color: colors.text }]}>Otimização de Bateria</Text>
+        <Switch value={true} onValueChange={() => {}} trackColor={{ false: colors.inputBackground, true: colors.tint }} thumbColor={colors.textInverse} />
       </View>
 
-      <View style={styles.row}>
-        <Text style={styles.label}>Notificações</Text>
-        <Switch value={true} onValueChange={() => {}} />
+      <View style={[styles.row, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
+        <Text style={[styles.label, { color: colors.text }]}>Notificações</Text>
+        <Switch value={true} onValueChange={() => {}} trackColor={{ false: colors.inputBackground, true: colors.tint }} thumbColor={colors.textInverse} />
       </View>
     </View>
   );
@@ -37,6 +37,15 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   title: { fontSize: 26, fontWeight: '800', marginBottom: 12 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 16, marginBottom: 12 },
+  row: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingVertical: 12, 
+    borderRadius: 12, 
+    paddingHorizontal: 16, 
+    marginBottom: 12,
+    borderWidth: 1,
+  },
   label: { fontSize: 16, fontWeight: '600' },
 });

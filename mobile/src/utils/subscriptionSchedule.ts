@@ -1,9 +1,9 @@
 export type SubscriptionRecurrence = 'mensal' | 'trimestral' | 'semestral' | 'anual';
 
-export const SUBSCRIPTION_RECURRENCE_OPTIONS: Array<{
+export const SUBSCRIPTION_RECURRENCE_OPTIONS: {
   label: string;
   value: SubscriptionRecurrence;
-}> = [
+}[] = [
   { label: 'Mensal', value: 'mensal' },
   { label: 'Trimestral', value: 'trimestral' },
   { label: 'Semestral', value: 'semestral' },

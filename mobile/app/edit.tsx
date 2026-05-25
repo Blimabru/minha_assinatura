@@ -6,6 +6,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 // 1. IMPORTANDO O HOOK DO SEU DATABASE
 import { useSubscriptions } from '@/database/hooks/useSubscriptions';
 import { formatCurrencyInput, parseCurrencyStringToNumber } from '../src/utils/formatCurrency';
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 import {
   buildSubscriptionDueDate,
   splitSubscriptionDueDate,
@@ -15,7 +17,9 @@ import {
 
 export default function EditSubscriptionScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams(); 
+  const { id } = useLocalSearchParams();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light']; 
 
   const [valor, setValor] = useState('');
   const [moeda, setMoeda] = useState('BRL');
@@ -85,24 +89,25 @@ useEffect(() => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Editar Assinatura</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Editar Assinatura</Text>
 
-      <Text style={styles.label}>Valor ({moeda})</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Valor ({moeda})</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
         value={valor}
         onChangeText={(text) => setValor(formatCurrencyInput(text))}
         keyboardType="numeric"
         placeholder="Ex: 39,90"
+        placeholderTextColor={colors.textTertiary}
       />
 
-      <Text style={styles.label}>Recorrência</Text>
-      <View style={styles.pickerWrapper}>
+      <Text style={[styles.label, { color: colors.text }]}>Recorrência</Text>
+      <View style={[styles.pickerWrapper, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}>
         <Picker
           selectedValue={recurrence}
           onValueChange={(value: SubscriptionRecurrence) => setRecurrence(value)}
-          style={styles.picker}
+          style={[styles.picker, { color: colors.text }]}
         >
           {SUBSCRIPTION_RECURRENCE_OPTIONS.map((option) => (
             <Picker.Item key={option.value} label={option.label} value={option.value} />
@@ -110,36 +115,39 @@ useEffect(() => {
         </Picker>
       </View>
 
-      <Text style={styles.label}>Vencimento (dia / mês / ano)</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Vencimento (dia / mês / ano)</Text>
       <View style={styles.dueDateRow}>
         <TextInput
-          style={[styles.input, styles.dueDateInput]}
+          style={[styles.input, styles.dueDateInput, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
           value={dueDay}
           onChangeText={setDueDay}
           keyboardType="numeric"
           placeholder="DD"
+          placeholderTextColor={colors.textTertiary}
           maxLength={2}
         />
         <TextInput
-          style={[styles.input, styles.dueDateInput]}
+          style={[styles.input, styles.dueDateInput, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
           value={dueMonth}
           onChangeText={setDueMonth}
           keyboardType="numeric"
           placeholder="MM"
+          placeholderTextColor={colors.textTertiary}
           maxLength={2}
         />
         <TextInput
-          style={[styles.input, styles.dueDateYearInput]}
+          style={[styles.input, styles.dueDateYearInput, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
           value={dueYear}
           onChangeText={setDueYear}
           keyboardType="numeric"
           placeholder="AAAA"
+          placeholderTextColor={colors.textTertiary}
           maxLength={4}
         />
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleSalvar}>
-        <Text style={styles.buttonText}>Salvar Alterações</Text>
+      <TouchableOpacity style={[styles.button, { backgroundColor: colors.tint }]} onPress={handleSalvar}>
+        <Text style={[styles.buttonText, { color: colors.textInverse }]}>Salvar Alterações</Text>
       </TouchableOpacity>
     </View>
   );
@@ -149,22 +157,18 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#fff',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
-    color: '#333',
   },
   label: {
     fontSize: 16,
     marginBottom: 8,
-    color: '#555',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
@@ -193,7 +197,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   button: {
-    backgroundColor: '#007AFF', // Cor azul padrão de botões
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',

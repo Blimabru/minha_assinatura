@@ -10,6 +10,8 @@
 import React from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useColorScheme } from '@/components/useColorScheme';
+import Colors from '@/constants/Colors';
 
 interface Props {
   value: string;
@@ -17,13 +19,17 @@ interface Props {
   placeholder?: string;
 }
 
-export const SearchBar: React.FC<Props> = ({ value, onChange, placeholder = 'Buscar assinaturas...' }) => {
+const SearchBar: React.FC<Props> = ({ value, onChange, placeholder = 'Buscar assinaturas...' }) => {
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+
   return (
-    <View style={styles.container}>
-      <FontAwesome name="search" size={16} color="#999" style={{ marginHorizontal: 8 }} />
+    <View style={[styles.container, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}>
+      <FontAwesome name="search" size={16} color={colors.textSecondary} style={{ marginHorizontal: 8 }} />
       <TextInput
         placeholder={placeholder}
-        style={styles.input}
+        placeholderTextColor={colors.textTertiary}
+        style={[styles.input, { color: colors.text }]}
         value={value}
         onChangeText={onChange}
       />
@@ -35,10 +41,10 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
     borderRadius: 12,
     paddingVertical: 8,
     marginVertical: 12,
+    borderWidth: 1,
     elevation: 1,
   },
   input: { flex: 1, paddingVertical: 6, paddingHorizontal: 4, fontSize: 14 },

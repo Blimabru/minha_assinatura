@@ -12,6 +12,7 @@
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
     "@nozbe/watermelondb": "^0.28.0",
+    "@react-native-community/datetimepicker": "8.4.4",
     "@react-native-picker/picker": "^2.11.4",
     "@react-navigation/native": "^7.1.8",
     "expo": "~54.0.33",
@@ -35,9 +36,9 @@
   },
   "devDependencies": {
     "@babel/plugin-proposal-decorators": "^7.29.0",
+    "@jest/globals": "^29.0.0",
     "@types/react": "~19.1.0",
     "eslint": "^9.0.0",
-    "@jest/globals": "^29.0.0",
     "eslint-config-expo": "~10.0.0",
     "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"
