@@ -108,7 +108,7 @@ export default function HomeScreen() {
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>{loading ? 'Carregando...' : 'Nenhum vencimento pr�ximo.'}</Text>
+          <Text style={styles.emptyText}>{loading ? 'Carregando...' : 'Nenhum vencimento próximo.'}</Text>
         }
         renderItem={({ item }) => (
           <CardItem
@@ -153,19 +153,21 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: 'row',
+    backgroundColor: '#f8f6ff',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 24,
   },
   greeting: {
     fontSize: 28,
+    backgroundColor: '#f8f6ff',
     fontWeight: '800',
     color: '#111827',
   },
   description: {
     fontSize: 14,
+    backgroundColor: '#f8f6ff',
     color: '#6b7280',
-    marginTop: 6,
   },
   bellButton: {
     width: 52,
@@ -216,19 +218,21 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     flexDirection: 'row',
+    backgroundColor: '#f8f6ff',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
     marginBottom: 16,
   },
   sectionTitle: {
     fontSize: 20,
+    backgroundColor: '#f8f6ff',
     fontWeight: '800',
     color: '#111827',
   },
   sectionHint: {
+    backgroundColor: '#f8f6ff',
     fontSize: 13,
     color: '#6b7280',
-    marginTop: 4,
   },
   linkText: {
     color: '#7c3aed',
