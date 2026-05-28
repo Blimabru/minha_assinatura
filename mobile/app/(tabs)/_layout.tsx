@@ -7,54 +7,50 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 
-// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  return <FontAwesome size={24} style={{ marginBottom: -3 }} {...props} />;
 }
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
+
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.tint,
-        headerShown: useClientOnlyValue(false, true),
+        tabBarInactiveTintColor: colors.tabIconDefault,
+        headerShown: false,
         tabBarShowLabel: true,
         tabBarStyle: { backgroundColor: colors.backgroundSecondary, borderTopColor: colors.cardBorder },
-      }}>
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
           title: 'Início',
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
-          headerRight: () => (
-            <Pressable
-              onPress={() => router.push('/discounts-page')}
-              style={({ pressed }) => ({
-                marginRight: 12,
-                opacity: pressed ? 0.7 : 1,
-                padding: 6,
-                borderRadius: 8,
-                backgroundColor: '#FF6B00',
-              })}
-            >
-              <FontAwesome name="tags" size={20} color="#fff" />
-            </Pressable>
-          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="subscriptionsList"
+        options={{
+          title: 'Assinaturas',
+          tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
         }}
       />
 
       <Tabs.Screen
         name="create"
         options={{
-          title: 'Adicionar',
+          title: 'Novo',
           tabBarIcon: ({ color }) => <TabBarIcon name="plus" color="#fff" />,
-          tabBarButton: (props) => (
+          tabBarButton: () => (
             <View style={styles.fabContainer}>
               <Pressable
                 onPress={() => router.push('/subscriptions/create')}
@@ -67,6 +63,14 @@ export default function TabLayout() {
               </Pressable>
             </View>
           ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="reports"
+        options={{
+          title: 'Relatórios',
+          tabBarIcon: ({ color }) => <TabBarIcon name="bar-chart" color={color} />,
         }}
       />
 
