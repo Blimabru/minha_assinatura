@@ -31,8 +31,11 @@ export type SubscriptionItem = {
 };
 
 function normalizeStatus(rowStatus: string | null | undefined, isActive: boolean): SubscriptionStatus {
-    if (rowStatus === 'active' || rowStatus === 'inactive' || rowStatus === 'cancelled') {
-        return rowStatus;
+    if (typeof rowStatus === 'string') {
+        const normalized = rowStatus.trim().toLowerCase();
+        if (normalized === 'active' || normalized === 'inactive' || normalized === 'cancelled') {
+            return normalized as SubscriptionStatus;
+        }
     }
 
     return isActive ? 'active' : 'cancelled';
