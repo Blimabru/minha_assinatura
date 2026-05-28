@@ -1,20 +1,16 @@
-// Router para navegação entre telas.
-import React, { useState, useMemo } from 'react';
-
-// Componentes nativos para botão, lista e estilos.
+﻿import React, { useState, useMemo } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Modal, TextInput } from 'react-native';
+import { useRouter } from 'expo-router';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Picker } from '@react-native-picker/picker';
 
-// Componentes tematizados do projeto.
 import { Text, View } from '@/components/Themed';
-
-// Hook reativo que já alimenta a dashboard.
 import { useSubscriptions, type SubscriptionItem, type SubscriptionStatus } from '@/database/hooks/useSubscriptions';
-import SearchBar from '../../src/components/UI/SearchBar';
 import { formatCurrencyByCode, formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/utils/formatCurrency';
 import { useTopAlert } from '../../src/hooks/useTopAlert';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
+import CardItem from '../../src/components/UI/CardItem';
 import {
   buildSubscriptionDueDate,
   splitSubscriptionDueDate,
@@ -22,59 +18,26 @@ import {
   type SubscriptionRecurrence,
 } from '../../src/utils/subscriptionSchedule';
 
-// Ícones
-import CardItem from '../../src/components/UI/CardItem';
-
-// Tela principal da aba Dashboard.
 export default function TabOneScreen() {
   const { TopAlert, showError, showSuccess } = useTopAlert();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const router = useRouter();
 
-  // Dados derivados do banco (reativos).
-  const { loading, items, totalExpenses, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
+  const { loading, activeSubscriptions, monthlyTotal, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
 
-  // Estados para busca/filtragem (movido de subscriptions.tsx)
-  const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'active' | 'inactive' | 'cancelled'>('all');
+  const upcomingSubscriptions = useMemo(() => {
+    return activeSubscriptions
+      .slice()
+      .sort((a, b) => {
+        if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+        if (a.dueDate) return -1;
+        if (b.dueDate) return 1;
+        return a.serviceName.localeCompare(b.serviceName);
+      })
+      .slice(0, 5);
+  }, [activeSubscriptions]);
 
-  const filtered = useMemo(() => {
-    const base =
-      filter === 'all'
-        ? items
-        : filter === 'active'
-          ? items.filter((i) => i.status === 'active')
-          : items.filter((i) => i.status === filter);
-    return base.filter(i => i.serviceName.toLowerCase().includes(query.toLowerCase()));
-  }, [items, filter, query]);
-
-  const expenseSummary = useMemo(() => {
-    return items.reduce(
-      (acc, item) => {
-        acc[item.status] = (acc[item.status] || 0) + item.value;
-        return acc;
-      },
-      { active: 0, inactive: 0, cancelled: 0 } as Record<SubscriptionStatus, number>
-    );
-  }, [items]);
-
-  const chartData = useMemo(() => {
-    const entries = [
-      { key: 'active' as const, label: 'Ativas', color: colors.chartActive },
-      { key: 'inactive' as const, label: 'Inativas', color: colors.chartInactive },
-      { key: 'cancelled' as const, label: 'Canceladas', color: colors.chartCancelled },
-    ];
-
-    const maxValue = Math.max(...entries.map((entry) => expenseSummary[entry.key]), 1);
-
-    return entries.map((entry) => ({
-      ...entry,
-      value: expenseSummary[entry.key],
-      width: `${Math.max((expenseSummary[entry.key] / maxValue) * 100, 8)}%` as `${number}%`,
-    }));
-  }, [expenseSummary, colors]);
-
-  // Estados para o modal de edição
   const [modalVisible, setModalVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionItem | null>(null);
@@ -87,7 +50,6 @@ export default function TabOneScreen() {
   const [editDueMonth, setEditDueMonth] = useState('');
   const [editDueYear, setEditDueYear] = useState('');
 
-  // Função para abrir modal de edição
   function openEditModal(subscription: SubscriptionItem) {
     setSelectedSubscription(subscription);
     setEditServiceName(subscription.serviceName);
@@ -111,7 +73,6 @@ export default function TabOneScreen() {
     setMenuVisible(false);
   }
 
-  // Função para salvar edição
   async function handleSaveEdit() {
     if (!selectedSubscription) return;
 
@@ -207,80 +168,51 @@ export default function TabOneScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}> 
+      <TopAlert />
+
+      <View style={styles.header}>
+        <View>
+          <Text style={[styles.greeting, { color: colors.text }]}>Olá, Kéven</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Veja abaixo seus próximos vencimentos.</Text>
+        </View>
+        <View style={styles.headerActions}>
+          <Pressable
+            style={[styles.notificationButton, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}
+            onPress={() => router.push('/discounts-page')}
+          >
+            <FontAwesome name="ticket" size={20} color={colors.textSecondary} />
+          </Pressable>
+          <Pressable style={[styles.notificationButton, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder, marginLeft: 12 }]}> 
+            <FontAwesome name="bell" size={20} color={colors.textSecondary} />
+            <View style={[styles.notificationDot, { backgroundColor: colors.tint }]} />
+          </Pressable>
+        </View>
+      </View>
+
+      <View style={styles.metricsRow}>
+        <View style={[styles.metricCard, { backgroundColor: colors.tint }]}> 
+          <Text style={[styles.metricLabel, { color: colors.textInverse }]}>Custo Mensal</Text>
+          <Text style={[styles.metricValue, { color: colors.textInverse }]}>{formatCurrencyByCode(monthlyTotal, 'BRL')}</Text>
+        </View>
+        <View style={[styles.metricCard, { backgroundColor: '#F5A623', borderColor: colors.cardBorder, borderWidth: 1 }]}>
+          <Text style={[styles.metricLabel, { color: colors.textInverse }]}>Assinaturas Ativas</Text>
+          <Text style={[styles.metricValue, { color: colors.textInverse }]}>{activeSubscriptions.length}</Text>
+        </View>
+      </View>
+
+      <View style={styles.nextHeader}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Próximos Vencimentos</Text>
+        <Text style={[styles.linkText, { color: colors.tint }]} onPress={() => router.push('/subscriptionsList')}>Ver todos</Text>
+      </View>
+
       <FlatList
-        data={filtered}
+        data={upcomingSubscriptions}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
-        ListHeaderComponent={(
-          <>
-            <TopAlert />
-
-            <View style={styles.summaryGrid}>
-              <View style={[styles.summaryCard, styles.summaryCardPrimary, { backgroundColor: colors.tint }]}>
-                  <Text style={[styles.summaryLabel, { color: colors.textInverse }]}>Gasto total</Text>
-                  <Text style={[styles.summaryValue, { color: colors.textInverse }]}>{formatCurrencyByCode(totalExpenses, 'BRL')}</Text>
-                  <Text style={[styles.summaryHint, { color: colors.textInverse }]}>Somando todas as assinaturas</Text>
-                </View>
-
-              <View style={styles.summaryRow}>
-                <View style={[styles.summaryMiniCard, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
-                  <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Ativas</Text>
-                  <Text style={[styles.summaryMiniValue, { color: colors.text }]}>{formatCurrencyByCode(expenseSummary.active, 'BRL')}</Text>
-                </View>
-                <View style={[styles.summaryMiniCard, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
-                  <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Canceladas</Text>
-                  <Text style={[styles.summaryMiniValue, { color: colors.text }]}>{formatCurrencyByCode(expenseSummary.cancelled, 'BRL')}</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.chartSection}>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>Distribuição dos gastos</Text>
-              <View style={[styles.chartCard, { backgroundColor: colors.chartCardBackground, borderColor: colors.cardBorder }]}>
-                {chartData.map((item) => (
-                  <View key={item.key} style={styles.chartItem}>
-                    <View style={styles.chartHeader}>
-                      <Text style={[styles.chartLabel, { color: colors.text }]}>{item.label}</Text>
-                      <Text style={[styles.chartValue, { color: colors.textSecondary }]}>{formatCurrencyByCode(item.value, 'BRL')}</Text>
-                    </View>
-                    <View style={[styles.chartTrack, { backgroundColor: colors.chartTrackBg }]}>
-                      <View style={[styles.chartFill, { width: item.width, backgroundColor: item.color }]} />
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            <SearchBar value={query} onChange={setQuery} placeholder="Buscar assinaturas..." />
-            <View style={styles.filters}>
-              {[
-                { label: 'Todas', value: 'all' },
-                { label: 'Ativas', value: 'active' },
-                { label: 'Inativas', value: 'inactive' },
-                { label: 'Canceladas', value: 'cancelled' },
-              ].map((item) => (
-                <Text
-                  key={item.value}
-                  onPress={() => setFilter(item.value as 'all' | 'active' | 'inactive' | 'cancelled')}
-                  style={[
-                    styles.filterItem,
-                    {
-                      backgroundColor: filter === item.value ? colors.tint : colors.backgroundTertiary,
-                      color: filter === item.value ? colors.textInverse : colors.text,
-                    },
-                    filter === item.value && styles.filterActive,
-                  ]}
-                >
-                  {item.label}
-                </Text>
-              ))}
-            </View>
-          </>
-        )}
         ListEmptyComponent={(
-          <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}>
-            {loading ? 'Carregando assinaturas...' : 'Nenhuma assinatura encontrada.'}
+          <Text style={[styles.emptyState, { color: colors.textSecondary }]}> 
+            {loading ? 'Carregando assinaturas...' : 'Nenhuma assinatura ativa encontrada.'}
           </Text>
         )}
         renderItem={({ item }) => (
@@ -339,7 +271,7 @@ export default function TabOneScreen() {
       </Modal>
 
       <Modal visible={modalVisible} animationType="slide" onRequestClose={() => setModalVisible(false)}>
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}> 
           <Text style={[styles.modalTitle, { color: colors.text }]}>Editar Assinatura</Text>
           {selectedSubscription && (
             <>
@@ -367,12 +299,12 @@ export default function TabOneScreen() {
                 style={[styles.input, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
                 value={editCurrency}
                 onChangeText={setEditCurrency}
-                placeholder="Ex: BRL, USD"
+                placeholder="Ex: BRL"
                 placeholderTextColor={colors.textTertiary}
               />
 
               <Text style={[styles.modalLabel, { color: colors.text }]}>Recorrência:</Text>
-              <View style={[styles.pickerContainer, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}>
+              <View style={[styles.pickerContainer, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}> 
                 <Picker
                   selectedValue={editRecurrence}
                   onValueChange={(itemValue: SubscriptionRecurrence) => setEditRecurrence(itemValue)}
@@ -416,7 +348,7 @@ export default function TabOneScreen() {
               </View>
 
               <Text style={[styles.modalLabel, { color: colors.text }]}>Categoria:</Text>
-              <View style={[styles.pickerContainer, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}>
+              <View style={[styles.pickerContainer, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}> 
                 <Picker
                   selectedValue={editCategoryId}
                   onValueChange={(itemValue: string) => setEditCategoryId(itemValue)}
@@ -448,133 +380,83 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  listContainer: {
-    paddingBottom: 32,
-    gap: 6,
-  },
-  summaryGrid: {
-    gap: 12,
-    marginBottom: 16,
-  },
-  summaryCard: {
-    borderRadius: 18,
-    padding: 18,
-  },
-  summaryCardPrimary: {
-    shadowColor: '#000',
-    shadowOpacity: 0.14,
-    shadowRadius: 16,
-    elevation: 3,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  summaryMiniCard: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-  },
-  summaryLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  summaryValue: {
-    marginTop: 8,
-    fontSize: 26,
-    fontWeight: '800',
-  },
-  summaryMiniValue: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  summaryHint: {
-    marginTop: 6,
-    fontSize: 12,
-  },
-  chartSection: {
-    marginBottom: 16,
-  },
-  chartCard: {
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1.5,
-    gap: 14,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  chartItem: {
-    gap: 10,
-    paddingBottom: 4,
-  },
-  chartHeader: {
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 20,
+    marginTop: 30,
   },
-  chartLabel: {
+  greeting: {
+    fontSize: 28,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 12,
+  },
+  notificationButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  notificationDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    position: 'absolute',
+    top: 10,
+    right: 10,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metricsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  metricCard: {
+    flex: 1,
+    borderRadius: 20,
+    padding: 18,
+    justifyContent: 'space-between',
+  },
+  metricLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 8,
+  },
+  metricValue: {
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  nextHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  linkText: {
     fontSize: 14,
     fontWeight: '700',
   },
-  chartValue: {
-    fontSize: 13,
-    fontWeight: '700',
+  listContainer: {
+    paddingBottom: 32,
   },
-  chartTrack: {
-    height: 12,
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-  chartFill: {
-    height: '100%',
-    borderRadius: 999,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  total: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
-  },
-  filters: { flexDirection: 'row', gap: 8, marginBottom: 12 },
-  filterItem: { padding: 8, borderRadius: 8, marginRight: 8 },
-  filterActive: { fontWeight: '600' },
-  cardsRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
-  card: { borderRadius: 12, padding: 16, flex: 1, marginRight: 8 },
-  cardLabel: { fontWeight: '600' },
-  cardValue: { fontSize: 20, fontWeight: '800', marginTop: 8 },
-  sectionTitle: { fontSize: 16, fontWeight: '700', marginVertical: 12 },
-  chartPlaceholder: { borderRadius: 12, height: 200, justifyContent: 'center', alignItems: 'center' },
-  addButton: {
-    borderRadius: 10,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  addButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
+  emptyState: {
+    marginTop: 16,
     textAlign: 'center',
-  },
-  list: {
-    gap: 12,
-  },
-  emptyMessage: {
-    marginTop: 12,
   },
   menuOverlay: {
     flex: 1,
@@ -597,7 +479,7 @@ const styles = StyleSheet.create({
   menuActionButton: {
     paddingVertical: 14,
     paddingHorizontal: 12,
-    borderRadius: 10,
+    borderRadius: 12,
     marginBottom: 10,
   },
   menuActionText: {
@@ -605,10 +487,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   menuDangerButton: {
-    // Color applied via inline style
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    marginBottom: 10,
   },
   menuDangerText: {
-    // Color applied via inline style
+    fontSize: 15,
+    fontWeight: '600',
   },
   menuCloseButton: {
     paddingVertical: 14,
@@ -617,17 +503,6 @@ const styles = StyleSheet.create({
   menuCloseText: {
     fontSize: 15,
     fontWeight: '700',
-  },
-  cardContent: {
-    flex: 1,
-  },
-  editIcon: {
-    padding: 8,
-  },
-  service: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
   },
   modalContainer: {
     flex: 1,
@@ -642,13 +517,15 @@ const styles = StyleSheet.create({
   },
   modalLabel: {
     fontSize: 16,
-    marginBottom: 5,
+    marginBottom: 8,
+    fontWeight: '600',
   },
   input: {
     borderWidth: 1,
-    padding: 10,
+    padding: 12,
     marginBottom: 15,
-    borderRadius: 5,
+    borderRadius: 12,
+    fontSize: 15,
   },
   dueDateRow: {
     flexDirection: 'row',
@@ -667,30 +544,32 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 12,
     alignItems: 'center',
     marginBottom: 10,
   },
   saveButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   cancelButton: {
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 12,
     alignItems: 'center',
   },
   cancelButtonText: {
     fontSize: 16,
+    fontWeight: '700',
   },
   pickerContainer: {
     borderWidth: 1,
-    borderRadius: 5,
+    borderRadius: 12,
     marginBottom: 15,
+    overflow: 'hidden',
   },
   picker: {
-    height: 50,
+    height: 52,
     width: '100%',
   },
 });
