@@ -19,7 +19,9 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}> 
-      <Text style={[styles.title, { color: colors.text }]}>Configurações</Text>
+      <View style={styles.headerConf}>
+        <Text style={[styles.title, { color: colors.text }]}>Configurações</Text>
+      </View>
 
       <View style={[styles.row, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
         <Text style={[styles.label, { color: colors.text }]}>Otimização de Bateria</Text>
@@ -35,8 +37,15 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
-  title: { fontSize: 26, fontWeight: '800', marginBottom: 12 },
+  headerConf: {
+    marginTop: 30,
+  },
+  container: {
+    flex: 1, padding: 16
+  },
+  title: {
+    fontSize: 26, fontWeight: '800', marginBottom: 12
+  },
   row: { 
     flexDirection: 'row', 
     justifyContent: 'space-between', 
@@ -47,5 +56,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
   },
-  label: { fontSize: 16, fontWeight: '600' },
+  label: {
+    fontSize: 16, fontWeight: '600',
+  },
 });
