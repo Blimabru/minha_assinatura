@@ -20,7 +20,7 @@ export default {
     textInverse: '#ffffff',
 
     // Backgrounds
-    background: '#ffffff',
+    background: '#e9e9e9',
     backgroundSecondary: '#f9fafb',
     backgroundTertiary: '#f3f4f6',
 

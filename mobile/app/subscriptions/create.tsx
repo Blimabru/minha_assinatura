@@ -248,10 +248,10 @@ export default function CreateSubscriptionScreen() {
         });
       });
 
-      // Mostra notificação de sucesso (top) e volta após 2.5s
+      // Mostra notificação de sucesso (top) e redireciona para a tela inicial
       showSuccess('Assinatura cadastrada com sucesso!');
       setTimeout(() => {
-        router.back();
+        router.replace('/');
       }, 2500);
     } catch (error) {
       console.error('Erro ao salvar assinatura:', error);

@@ -1,43 +1,34 @@
-﻿import React, { useState, useMemo } from 'react';
-import { Alert, FlatList, Pressable, StyleSheet, Modal, TextInput } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Alert, FlatList, Modal, Pressable, StyleSheet, TextInput, View as RNView } from 'react-native';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Picker } from '@react-native-picker/picker';
 
 import { Text, View } from '@/components/Themed';
 import { useSubscriptions, type SubscriptionItem, type SubscriptionStatus } from '@/database/hooks/useSubscriptions';
+import SearchBar from '../../src/components/UI/SearchBar';
+import CardItem from '../../src/components/UI/CardItem';
 import { formatCurrencyByCode, formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/utils/formatCurrency';
 import { useTopAlert } from '../../src/hooks/useTopAlert';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
-import CardItem from '../../src/components/UI/CardItem';
 import {
   buildSubscriptionDueDate,
   splitSubscriptionDueDate,
   SUBSCRIPTION_RECURRENCE_OPTIONS,
   type SubscriptionRecurrence,
 } from '../../src/utils/subscriptionSchedule';
+import { Picker } from '@react-native-picker/picker';
 
-export default function TabOneScreen() {
+export default function SubscriptionsListScreen() {
   const { TopAlert, showError, showSuccess } = useTopAlert();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
 
-  const { loading, activeSubscriptions, monthlyTotal, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
+  const { loading, items, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
 
-  const upcomingSubscriptions = useMemo(() => {
-    return activeSubscriptions
-      .slice()
-      .sort((a, b) => {
-        if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
-        if (a.dueDate) return -1;
-        if (b.dueDate) return 1;
-        return a.serviceName.localeCompare(b.serviceName);
-      })
-      .slice(0, 5);
-  }, [activeSubscriptions]);
-
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<'all' | 'active' | 'inactive' | 'cancelled'>('all');
   const [modalVisible, setModalVisible] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionItem | null>(null);
@@ -49,6 +40,20 @@ export default function TabOneScreen() {
   const [editDueDay, setEditDueDay] = useState('');
   const [editDueMonth, setEditDueMonth] = useState('');
   const [editDueYear, setEditDueYear] = useState('');
+
+  const filteredSubscriptions = useMemo(() => {
+    const filteredByStatus =
+      filter === 'all'
+        ? items
+        : filter === 'active'
+          ? items.filter((item) => item.status === 'active')
+          : items.filter((item) => item.status === filter);
+
+    return filteredByStatus.filter((item) =>
+      item.serviceName.toLowerCase().includes(query.toLowerCase()) ||
+      item.categoryName.toLowerCase().includes(query.toLowerCase())
+    );
+  }, [items, filter, query]);
 
   function openEditModal(subscription: SubscriptionItem) {
     setSelectedSubscription(subscription);
@@ -171,48 +176,44 @@ export default function TabOneScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}> 
       <TopAlert />
 
-      <View style={styles.header}>
-        <View>
-          <Text style={[styles.greeting, { color: colors.text }]}>Olá, Kéven</Text>
-          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Veja abaixo seus próximos vencimentos.</Text>
-        </View>
-        <View style={styles.headerActions}>
-          <Pressable
-            style={[styles.notificationButton, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}
-            onPress={() => router.push('/discounts-page')}
+      <View style={styles.headerAss}>
+          <Text style={[styles.title, { color: colors.text }]}>Assinaturas</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Gerencie todas as assinaturas cadastradas.</Text>
+      </View>
+
+      <SearchBar value={query} onChange={setQuery} placeholder="Buscar assinaturas..." />
+
+      <View style={styles.filters}>
+        {[
+          { label: 'Todas', value: 'all' },
+          { label: 'Ativas', value: 'active' },
+          { label: 'Inativas', value: 'inactive' },
+          { label: 'Canceladas', value: 'cancelled' },
+        ].map((item) => (
+          <Text
+            key={item.value}
+            onPress={() => setFilter(item.value as 'all' | 'active' | 'inactive' | 'cancelled')}
+            style={[
+              styles.filterItem,
+              {
+                backgroundColor: filter === item.value ? colors.tint : colors.backgroundTertiary,
+                color: filter === item.value ? colors.textInverse : colors.text,
+              },
+              filter === item.value && styles.filterActive,
+            ]}
           >
-            <FontAwesome name="ticket" size={20} color={colors.textSecondary} />
-          </Pressable>
-          <Pressable style={[styles.notificationButton, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder, marginLeft: 12 }]}> 
-            <FontAwesome name="bell" size={20} color={colors.textSecondary} />
-            <View style={[styles.notificationDot, { backgroundColor: colors.tint }]} />
-          </Pressable>
-        </View>
-      </View>
-
-      <View style={styles.metricsRow}>
-        <View style={[styles.metricCard, { backgroundColor: colors.tint }]}> 
-          <Text style={[styles.metricLabel, { color: colors.textInverse }]}>Custo Mensal</Text>
-          <Text style={[styles.metricValue, { color: colors.textInverse }]}>{formatCurrencyByCode(monthlyTotal, 'BRL')}</Text>
-        </View>
-        <View style={[styles.metricCard, { backgroundColor: '#F5A623', borderColor: colors.cardBorder, borderWidth: 1 }]}>
-          <Text style={[styles.metricLabel, { color: colors.textInverse }]}>Assinaturas Ativas</Text>
-          <Text style={[styles.metricValue, { color: colors.textInverse }]}>{activeSubscriptions.length}</Text>
-        </View>
-      </View>
-
-      <View style={styles.nextHeader}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Próximos Vencimentos</Text>
-        <Text style={[styles.linkText, { color: colors.tint }]} onPress={() => router.push('/subscriptionsList')}>Ver todos</Text>
+            {item.label}
+          </Text>
+        ))}
       </View>
 
       <FlatList
-        data={upcomingSubscriptions}
+        data={filteredSubscriptions}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={(
-          <Text style={[styles.emptyState, { color: colors.textSecondary }]}> 
-            {loading ? 'Carregando assinaturas...' : 'Nenhuma assinatura ativa encontrada.'}
+          <Text style={[styles.emptyMessage, { color: colors.textSecondary }]}> 
+            {loading ? 'Carregando assinaturas...' : 'Nenhuma assinatura encontrada.'}
           </Text>
         )}
         renderItem={({ item }) => (
@@ -376,86 +377,41 @@ export default function TabOneScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerAss: {
+    marginTop: 30,
+  },
   container: {
     flex: 1,
     padding: 16,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-    marginTop: 30,
-  },
-  greeting: {
+  title: {
     fontSize: 28,
     fontWeight: '800',
     marginBottom: 4,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 15,
+    marginBottom: 16,
   },
-  notificationButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  notificationDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    position: 'absolute',
-    top: 10,
-    right: 10,
-  },
-  headerActions: {
+  filters: {
     flexDirection: 'row',
-    alignItems: 'center',
+    gap: 10,
+    marginBottom: 16,
   },
-  metricsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 20,
+  filterItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    fontSize: 13,
   },
-  metricCard: {
-    flex: 1,
-    borderRadius: 20,
-    padding: 18,
-    justifyContent: 'space-between',
-  },
-  metricLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: 8,
-  },
-  metricValue: {
-    fontSize: 24,
-    fontWeight: '800',
-  },
-  nextHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  linkText: {
-    fontSize: 14,
+  filterActive: {
     fontWeight: '700',
   },
   listContainer: {
     paddingBottom: 32,
   },
-  emptyState: {
-    marginTop: 16,
+  emptyMessage: {
+    marginTop: 20,
     textAlign: 'center',
   },
   menuOverlay: {
@@ -486,16 +442,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
   },
-  menuDangerButton: {
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    marginBottom: 10,
-  },
-  menuDangerText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
   menuCloseButton: {
     paddingVertical: 14,
     alignItems: 'center',
@@ -504,6 +450,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
+  menuDangerButton: {
+    marginTop: 4,
+  },
+  menuDangerText: {},
   modalContainer: {
     flex: 1,
     padding: 20,
@@ -511,12 +461,12 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '800',
     marginBottom: 20,
     textAlign: 'center',
   },
   modalLabel: {
-    fontSize: 16,
+    fontSize: 15,
     marginBottom: 8,
     fontWeight: '600',
   },
