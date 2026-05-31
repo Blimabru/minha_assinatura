@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import AppDatabaseProvider from '@/database/providers/DatabaseProvider';
 import BatteryOptimizationProvider from '@/components/BatteryOptimizationProvider';
 import { AuthProvider } from '@/src/contexts/AuthContext';
+import { useExchangeRateSync } from '@/src/hooks/useExchangeRateSync';
 
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -53,6 +54,7 @@ export default function RootLayout() {
 }
 
 function RootLayoutContent() {
+  useExchangeRateSync();
   const colorScheme = useColorScheme();
 
   return (

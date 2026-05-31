@@ -54,6 +54,12 @@ class CurrencyConversionService {
     this.rates[rateKey] = rate;
   }
 
+  updateRates(rates: ExchangeRates): void {
+    Object.entries(rates).forEach(([rateKey, rate]) => {
+      this.rates[rateKey] = rate;
+    });
+  }
+
   /**
    * Obtém a taxa atual entre duas moedas
    */
