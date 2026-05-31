@@ -9,6 +9,8 @@ import database from '@/database';
 import Subscription from '@/database/models/Subscription';
 import Category from '@/database/models/Category';
 import { subscriptionNotificationService } from '@/src/services/SubscriptionNotificationService';
+import { currencyConversionService } from '@/src/services/CurrencyConversionService';
+import type { SupportedCurrency } from '@/src/services/CurrencyConversionService';
 import type { SubscriptionRecurrence } from '@/src/utils/subscriptionSchedule';
 
 export type SubscriptionStatus = 'active' | 'inactive' | 'cancelled';
@@ -255,15 +257,37 @@ export function useSubscriptions() {
 
     // Soma memoizada do custo mensal das assinaturas ativas.
     // Importante: já entrega dado pronto para o dashboard.
+    // ATUALIZADO: Agora considera conversão de moedas para BRL
     const monthlyTotal = useMemo(
         () =>
-            activeSubscriptions.reduce((acc, item) => acc + Number(item.value || 0), 0),
+            activeSubscriptions.reduce((acc, item) => {
+                const currencyUpper = (item.currency || 'BRL').toUpperCase();
+                let normalizedCurrency: SupportedCurrency = 'BRL';
+                
+                if (currencyUpper === 'USD' || currencyUpper === 'EUR' || currencyUpper === 'BRL') {
+                    normalizedCurrency = currencyUpper as SupportedCurrency;
+                }
+                
+                const valueInBRL = currencyConversionService.convertToBRL(Number(item.value || 0), normalizedCurrency);
+                return acc + valueInBRL;
+            }, 0),
         [activeSubscriptions]
     );
 
     // Soma de todos os gastos cadastrados, independentemente do status.
+    // ATUALIZADO: Agora considera conversão de moedas para BRL
     const totalExpenses = useMemo(
-        () => items.reduce((acc, item) => acc + Number(item.value || 0), 0),
+        () => items.reduce((acc, item) => {
+            const currencyUpper = (item.currency || 'BRL').toUpperCase();
+            let normalizedCurrency: SupportedCurrency = 'BRL';
+            
+            if (currencyUpper === 'USD' || currencyUpper === 'EUR' || currencyUpper === 'BRL') {
+                normalizedCurrency = currencyUpper as SupportedCurrency;
+            }
+            
+            const valueInBRL = currencyConversionService.convertToBRL(Number(item.value || 0), normalizedCurrency);
+            return acc + valueInBRL;
+        }, 0),
         [items]
     );
 
