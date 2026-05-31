@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Modal, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -45,6 +45,7 @@ export default function TabOneScreen() {
               await signOut();
               router.replace('/auth/register');
             } catch (error) {
+              console.error(error);
               showError('Erro ao fazer logout');
             }
           },

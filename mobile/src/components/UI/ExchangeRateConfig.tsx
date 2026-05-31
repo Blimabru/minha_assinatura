@@ -6,7 +6,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import type { SupportedCurrency } from '@/src/services/CurrencyConversionService';
 
-const CURRENCY_PAIRS: Array<{ from: SupportedCurrency; to: SupportedCurrency; label: string }> = [
+const CURRENCY_PAIRS: { from: SupportedCurrency; to: SupportedCurrency; label: string }[] = [
   { from: 'USD', to: 'BRL', label: 'USD → BRL' },
   { from: 'EUR', to: 'BRL', label: 'EUR → BRL' },
   { from: 'BRL', to: 'USD', label: 'BRL → USD' },

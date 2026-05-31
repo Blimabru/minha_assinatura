@@ -24,14 +24,13 @@ const CurrencyConversionBadge: React.FC<CurrencyConversionBadgeProps> = ({
 }) => {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  
+  const convertedValue = useCurrencyConversionToBRL(value, fromCurrency);
+  const exchangeRate = useExchangeRate(fromCurrency, 'BRL');
+
   // Se for BRL, não exibe nada
   if (fromCurrency === 'BRL') {
     return null;
   }
-
-  const convertedValue = useCurrencyConversionToBRL(value, fromCurrency);
-  const exchangeRate = useExchangeRate(fromCurrency, 'BRL');
 
   const fontSizes = {
     small: 12,
@@ -41,6 +40,8 @@ const CurrencyConversionBadge: React.FC<CurrencyConversionBadgeProps> = ({
 
   const formattedConverted = formatCurrencyByCode(convertedValue, 'BRL');
   const formattedOriginal = formatCurrencyByCode(value, fromCurrency);
+
+  const rateText = exchangeRate ? `Taxa: ${exchangeRate.toFixed(4)}` : undefined;
 
   return (
     <View style={styles.container}>
@@ -53,6 +54,11 @@ const CurrencyConversionBadge: React.FC<CurrencyConversionBadgeProps> = ({
       ]}>
         {formattedOriginal} = {formattedConverted}
       </Text>
+      {rateText ? (
+        <Text style={[styles.rateText, { color: colors.textSecondary }]}>
+          {rateText}
+        </Text>
+      ) : null}
     </View>
   );
 };

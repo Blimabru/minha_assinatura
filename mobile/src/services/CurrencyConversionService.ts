@@ -28,9 +28,16 @@ class CurrencyConversionService {
     if (fromCurrency === toCurrency) return value;
 
     const rateKey = `${fromCurrency}_${toCurrency}`;
-    const rate = this.rates[rateKey];
+    let rate = this.rates[rateKey];
 
-    if (!rate) {
+    if (rate === undefined) {
+      const fallbackRate = this.findFallbackRate(fromCurrency, toCurrency);
+      if (fallbackRate !== null) {
+        rate = fallbackRate;
+      }
+    }
+
+    if (rate === undefined) {
       console.warn(`Taxa de câmbio não encontrada para ${rateKey}`);
       return value;
     }
@@ -39,9 +46,30 @@ class CurrencyConversionService {
   }
 
   /**
+   * Procura uma taxa de câmbio indireta a partir de pares conhecidos.
+   */
+  private findFallbackRate(fromCurrency: SupportedCurrency, toCurrency: SupportedCurrency): number | null {
+    const baseCurrencies: SupportedCurrency[] = ['USD', 'EUR', 'BRL'];
+
+    for (const base of baseCurrencies) {
+      if (base === fromCurrency || base === toCurrency) continue;
+
+      const firstLeg = this.rates[`${fromCurrency}_${base}`];
+      const secondLeg = this.rates[`${base}_${toCurrency}`];
+
+      if (firstLeg !== undefined && secondLeg !== undefined) {
+        return firstLeg * secondLeg;
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Converte para BRL (moeda padrão da aplicação)
    */
   convertToBRL(value: number, fromCurrency: SupportedCurrency): number {
+    if (fromCurrency === 'BRL') return value;
     return this.convert(value, fromCurrency, 'BRL');
   }
 

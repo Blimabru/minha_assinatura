@@ -52,8 +52,8 @@ const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', value, cur
   };
 
   const normalizedCurrency = normalizeCurrency(currency);
-  const convertedValue = normalizedCurrency !== 'BRL' ? useCurrencyConversionToBRL(value, normalizedCurrency) : null;
-  const formattedConverted = convertedValue ? formatCurrencyByCode(convertedValue, 'BRL') : null;
+  const convertedValue = useCurrencyConversionToBRL(value, normalizedCurrency);
+  const formattedConverted = normalizedCurrency !== 'BRL' ? formatCurrencyByCode(convertedValue, 'BRL') : null;
 
   // Componente visual que aplica o layout do design: ícone + texto + ações
   return (

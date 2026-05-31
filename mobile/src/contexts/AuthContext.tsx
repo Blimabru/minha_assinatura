@@ -1,19 +1,6 @@
 import React, { createContext, useContext, useEffect, useReducer, ReactNode } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-let AsyncStorage: any = null;
-
-// Importar AsyncStorage de forma segura
-try {
-  AsyncStorage = require('@react-native-async-storage/async-storage').default;
-} catch (e) {
-  // Se falhar, criar um mock para web/testes
-  AsyncStorage = {
-    getItem: async () => null,
-    setItem: async () => null,
-    removeItem: async () => null,
-    getAllKeys: async () => [],
-  };
-}
 
 interface User {
   id: string;
