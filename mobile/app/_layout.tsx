@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 import AppDatabaseProvider from '@/database/providers/DatabaseProvider';
 import BatteryOptimizationProvider from '@/components/BatteryOptimizationProvider';
+import { AuthProvider } from '@/src/contexts/AuthContext';
 
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -17,7 +18,7 @@ export {
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
+  initialRouteName: 'index',
 };
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -44,10 +45,14 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <AuthProvider>
+      <RootLayoutContent />
+    </AuthProvider>
+  );
 }
 
-function RootLayoutNav() {
+function RootLayoutContent() {
   const colorScheme = useColorScheme();
 
   return (
@@ -55,6 +60,8 @@ function RootLayoutNav() {
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <BatteryOptimizationProvider />
         <Stack>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
           <Stack.Screen name="subscriptions" options={{ headerShown: false }} />
