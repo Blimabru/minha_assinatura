@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useEffect, useReducer, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 
 interface User {
@@ -16,6 +18,17 @@ interface AuthContextType {
   signIn: (email: string, password: string, rememberMe: boolean) => Promise<void>;
   signOut: () => Promise<void>;
 }
+
+const getApiUrl = () => {
+  const hostUri = Constants.expoConfig?.hostUri; // Ex: "192.168.1.100:8081"
+  if (hostUri) {
+    const ip = hostUri.split(':')[0];
+    return `http://${ip}:3000`;
+  }
+  return Platform.OS === 'android' ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
+};
+
+const API_URL = getApiUrl();
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -80,62 +93,68 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isSignout: state.isSignout,
     signUp: async (email: string, name: string, password: string) => {
       try {
-        // Em uma aplicação real, isso faria uma chamada à API
-        // Por enquanto, apenas salvamos localmente
-        const newUser: User = {
-          id: Date.now().toString(),
-          email,
-          name,
-        };
+        const response = await fetch(`${API_URL}/auth/register`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            name,
+            password,
+            currencyPreference: 'BRL',
+          }),
+        });
 
-        // Salvamos os dados do usuário incluindo a senha (simplificado)
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.message || 'Falha ao registrar.');
+        }
+
+        const data = await response.json();
+        const newUser: User = data.user;
+        const token = data.token;
+
         await AsyncStorage.setItem('user', JSON.stringify(newUser));
+        await AsyncStorage.setItem(`user_${email}_token`, token);
         await AsyncStorage.setItem(`user_${email}_password`, password);
 
         dispatch({ type: 'SIGN_UP', payload: newUser });
-      } catch {
-        throw new Error('Falha ao registrar. Tente novamente.');
+      } catch (e: any) {
+        throw new Error(e.message || 'Falha ao registrar. Tente novamente.');
       }
     },
     signIn: async (email: string, password: string, rememberMe: boolean) => {
       try {
-        // Em uma aplicação real, isso faria uma chamada à API
-        // Verificamos se o usuário existe e a senha está correta
-        const storedPassword = await AsyncStorage.getItem(`user_${email}_password`);
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email,
+            password,
+          }),
+        });
 
-        if (!storedPassword || storedPassword !== password) {
-          throw new Error('E-mail ou senha incorretos.');
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.message || 'E-mail ou senha incorretos.');
         }
 
-        // Buscamos os dados do usuário
-        const allKeys = await AsyncStorage.getAllKeys();
-        let user: User | null = null;
-
-        // Procuramos pelo usuário com este email
-        for (const key of allKeys) {
-          if (key === 'user') {
-            const storedUser = await AsyncStorage.getItem(key);
-            if (storedUser) {
-              const parsedUser = JSON.parse(storedUser);
-              if (parsedUser.email === email) {
-                user = parsedUser;
-                break;
-              }
-            }
-          }
-        }
-
-        if (!user) {
-          throw new Error('Usuário não encontrado.');
-        }
+        const data = await response.json();
+        const user: User = data.user;
+        const token = data.token;
 
         if (rememberMe) {
           await AsyncStorage.setItem('user', JSON.stringify(user));
         }
+        await AsyncStorage.setItem(`user_${email}_token`, token);
+        await AsyncStorage.setItem(`user_${email}_password`, password);
 
         dispatch({ type: 'SIGN_IN', payload: user });
-      } catch (e) {
-        throw e;
+      } catch (e: any) {
+        throw new Error(e.message || 'E-mail ou senha incorretos.');
       }
     },
     signOut: async () => {

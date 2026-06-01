@@ -3,6 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { synchronize } from '@nozbe/watermelondb/sync';
 import database from '@/database'; // WatermelonDB local database
 import { useAuth } from './AuthContext';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error' | 'offline';
 
@@ -14,8 +16,17 @@ interface SyncContextType {
 
 const SyncContext = createContext<SyncContextType | undefined>(undefined);
 
-// URL local da API (mude para 10.0.2.2 no emulador Android ou IP público/túnel se necessário)
-const API_URL = 'http://localhost:3000';
+// URL local da API dinâmica de acordo com o ambiente (emulador, dispositivo físico ou localhost)
+const getApiUrl = () => {
+  const hostUri = Constants.expoConfig?.hostUri; // Ex: "192.168.1.100:8081"
+  if (hostUri) {
+    const ip = hostUri.split(':')[0];
+    return `http://${ip}:3000`;
+  }
+  return Platform.OS === 'android' ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
+};
+
+const API_URL = getApiUrl();
 
 export const SyncProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
