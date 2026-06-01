@@ -424,7 +424,7 @@ export default function ReportsScreen() {
             keyExtractor={(item) => item.category}
             scrollEnabled={false}
             renderItem={({ item }) => (
-              <View style={styles.chartRow}>
+              <View style={[styles.chartRow, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
                 <Text style={[styles.chartLabel, { color: colors.text }]}>{item.category}</Text>
                 <Text style={[styles.chartAmount, { color: colors.textSecondary }]}>{formatCurrencyByCode(item.total, 'BRL')}</Text>
                 <View style={[styles.chartBarTrack, { backgroundColor: colors.chartTrackBg }]}> 
@@ -523,11 +523,9 @@ const styles = StyleSheet.create({
   chartRow: {
     gap: 12,
     marginBottom: 16,
-    backgroundColor: '#ffffff',
     padding: 12,
     borderRadius: 14,
     borderWidth: 0.5,
-    borderColor: '#c0c0c0',
   },
   chartLabel: {
     fontSize: 15,

@@ -1,6 +1,6 @@
 import React from 'react';
-import { StyleSheet, Pressable, Linking, Alert } from 'react-native';
-import { Text, View } from '@/components/Themed';
+import { StyleSheet, Pressable, Linking, Alert, View as RNView } from 'react-native';
+import { Text } from '@/components/Themed';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -40,7 +40,7 @@ export default function DiscountCard({
   };
 
   return (
-    <View
+    <RNView
       style={[
         styles.container,
         {
@@ -51,18 +51,18 @@ export default function DiscountCard({
         },
       ]}
     >
-      <View style={styles.header}>
+      <RNView style={styles.header}>
         <Text style={[styles.serviceName, { color: colors.text }]}>{serviceName}</Text>
         {discountPercentage && (
-          <View style={[styles.badge, { backgroundColor: colors.tint }]}>
+          <RNView style={[styles.badge, { backgroundColor: colors.tint }]}>
             <Text style={styles.badgeText}>{discountPercentage}% OFF</Text>
-          </View>
+          </RNView>
         )}
-      </View>
+      </RNView>
 
       <Text style={[styles.description, { color: colors.textSecondary }]}>{description}</Text>
 
-      <View style={styles.codeSection}>
+      <RNView style={styles.codeSection}>
         {discountCode && (
           <Pressable
             style={[styles.codeButton, { backgroundColor: colors.tint + '20' }]}
@@ -72,9 +72,9 @@ export default function DiscountCard({
             <Text selectable style={[styles.codeText, { color: colors.tint }]}>{discountCode}</Text>
           </Pressable>
         )}
-      </View>
+      </RNView>
 
-      <View style={styles.buttonsContainer}>
+      <RNView style={styles.buttonsContainer}>
         {affiliateLink && (
           <Pressable
             style={[styles.button, styles.affiliateButton, { borderColor: colors.tint, backgroundColor: 'transparent' }]}
@@ -91,8 +91,8 @@ export default function DiscountCard({
           <FontAwesome name="external-link" size={14} color="#fff" />
           <Text style={[styles.buttonText, { color: '#fff' }]}>Visitar</Text>
         </Pressable>
-      </View>
-    </View>
+      </RNView>
+    </RNView>
   );
 }
 
