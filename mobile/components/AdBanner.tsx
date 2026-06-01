@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import { Text } from '@/components/Themed';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAuth } from '@/src/contexts/AuthContext';
 import PurchaseModal from './PurchaseModal';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
+import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const getApiUrl = () => {
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (hostUri) {
+    const ip = hostUri.split(':')[0];
+    return `http://${ip}:3000`;
+  }
+  return Platform.OS === 'android' ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
+};
+
+const API_URL = getApiUrl();
 
 const ADVERTISEMENTS = [
   {
@@ -29,27 +42,58 @@ const ADVERTISEMENTS = [
 ];
 
 export default function AdBanner() {
-  const { isPremium } = useAuth();
+  const { isPremium, user } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
+  const [ads, setAds] = useState(ADVERTISEMENTS);
   const [adIndex, setAdIndex] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
 
+  // Fetch dynamic ads from NestJS server
+  useEffect(() => {
+    if (isPremium || !user) return;
+
+    const fetchAds = async () => {
+      try {
+        const token = await AsyncStorage.getItem(`user_${user.email}_token`);
+        const response = await fetch(`${API_URL}/sync/ads`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          const serverAds = await response.json();
+          if (serverAds && serverAds.length > 0) {
+            const merged = [...serverAds, ...ADVERTISEMENTS];
+            const unique = merged.filter((ad, index, self) =>
+              self.findIndex(t => t.title === ad.title) === index
+            );
+            setAds(unique);
+          }
+        }
+      } catch (e) {
+        console.warn('Erro ao carregar anúncios dinâmicos do servidor:', e);
+      }
+    };
+
+    fetchAds();
+  }, [isPremium, user]);
+
   // Auto-rotate ads every 8 seconds
   useEffect(() => {
-    if (isPremium) return;
+    if (isPremium || ads.length === 0) return;
 
     const interval = setInterval(() => {
-      setAdIndex((prev) => (prev + 1) % ADVERTISEMENTS.length);
+      setAdIndex((prev) => (prev + 1) % ads.length);
     }, 8000);
 
     return () => clearInterval(interval);
-  }, [isPremium]);
+  }, [isPremium, ads]);
 
-  if (isPremium) return null;
+  if (isPremium || ads.length === 0) return null;
 
-  const currentAd = ADVERTISEMENTS[adIndex];
+  const currentAd = ads[adIndex];
 
   return (
     <View style={[styles.wrapper, { borderColor: colors.cardBorder }]}>

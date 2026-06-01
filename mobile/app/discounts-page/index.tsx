@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { StyleSheet, FlatList } from 'react-native';
+import React, { useState, useMemo, useEffect } from 'react';
+import { StyleSheet, FlatList, Platform } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -7,6 +7,20 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import DiscountCard from '@/src/components/UI/DiscountCard';
 import SearchBar from '@/src/components/UI/SearchBar';
 import { DiscountItem } from '@/src/types/discount';
+import { useAuth } from '@/src/contexts/AuthContext';
+import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const getApiUrl = () => {
+  const hostUri = Constants.expoConfig?.hostUri;
+  if (hostUri) {
+    const ip = hostUri.split(':')[0];
+    return `http://${ip}:3000`;
+  }
+  return Platform.OS === 'android' ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
+};
+
+const API_URL = getApiUrl();
 
 // Dados mockados - você pode integrar com banco de dados depois
 const MOCK_DISCOUNTS: DiscountItem[] = [
@@ -53,12 +67,54 @@ const MOCK_DISCOUNTS: DiscountItem[] = [
 ];
 
 export default function DiscountsScreen() {
+  const { user } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const [searchQuery, setSearchQuery] = useState('');
+  const [coupons, setCoupons] = useState<DiscountItem[]>(MOCK_DISCOUNTS);
+
+  // Fetch dynamic coupons from NestJS server
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchCoupons = async () => {
+      try {
+        const token = await AsyncStorage.getItem(`user_${user.email}_token`);
+        const response = await fetch(`${API_URL}/sync/coupons`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        if (response.ok) {
+          const serverCoupons = await response.json();
+          if (serverCoupons && serverCoupons.length > 0) {
+            const mappedServer: DiscountItem[] = serverCoupons.map((c: any) => ({
+              id: c.id,
+              serviceName: c.serviceName,
+              description: c.description,
+              discountCode: c.discountCode,
+              discountPercentage: c.discountPercentage,
+              externalLink: c.externalLink,
+              affiliateLink: c.affiliateLink,
+              category: c.category,
+            }));
+            const merged = [...mappedServer, ...MOCK_DISCOUNTS];
+            const unique = merged.filter((item, index, self) =>
+              self.findIndex(t => t.discountCode === item.discountCode) === index
+            );
+            setCoupons(unique);
+          }
+        }
+      } catch (e) {
+        console.warn('Erro ao carregar cupons dinâmicos do servidor:', e);
+      }
+    };
+
+    fetchCoupons();
+  }, [user]);
 
   const filteredDiscounts = useMemo(() => {
-    let filtered = MOCK_DISCOUNTS;
+    let filtered = coupons;
 
     if (searchQuery.trim()) {
       filtered = filtered.filter(
@@ -69,7 +125,7 @@ export default function DiscountsScreen() {
     }
 
     return filtered;
-  }, [searchQuery]);
+  }, [searchQuery, coupons]);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}> 
