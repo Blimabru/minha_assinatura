@@ -1,6 +1,5 @@
 import React from 'react';
-import { StyleSheet, Pressable, Linking, Alert, View as RNView } from 'react-native';
-import { Text } from '@/components/Themed';
+import { StyleSheet, Pressable, Linking, Alert, View as RNView, Text } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
