@@ -9,6 +9,7 @@ interface User {
   email: string;
   name: string;
   isAdmin?: boolean;
+  isPremium?: boolean;
 }
 
 interface AuthContextType {
@@ -162,6 +163,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await AsyncStorage.setItem('user', JSON.stringify(newUser));
         await AsyncStorage.setItem(`user_${email}_token`, token);
         await AsyncStorage.setItem(`user_${email}_password`, password);
+        await AsyncStorage.setItem(`user_premium_${email}`, 'false');
 
         dispatch({ type: 'SIGN_UP', payload: { user: newUser, isPremium: false } });
       } catch (e: any) {
@@ -196,8 +198,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await AsyncStorage.setItem(`user_${email}_token`, token);
         await AsyncStorage.setItem(`user_${email}_password`, password);
 
-        const isPremiumStr = await AsyncStorage.getItem(`user_premium_${email}`);
-        dispatch({ type: 'SIGN_IN', payload: { user, isPremium: isPremiumStr === 'true' } });
+        const isPremium = user.isPremium === true;
+        await AsyncStorage.setItem(`user_premium_${email}`, isPremium ? 'true' : 'false');
+        dispatch({ type: 'SIGN_IN', payload: { user, isPremium } });
       } catch (e: any) {
         throw new Error(e.message || 'E-mail ou senha incorretos.');
       }
