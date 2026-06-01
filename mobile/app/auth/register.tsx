@@ -8,6 +8,28 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import { useAuth } from '@/src/contexts/AuthContext';
 
+const checkPasswordStrength = (pass: string) => {
+  if (!pass) return { score: 0, label: 'Ausente', color: '#999', width: '0%' };
+  
+  let score = 0;
+  
+  // 1. Length >= 6
+  if (pass.length >= 6) score += 1;
+  // 2. Length >= 8
+  if (pass.length >= 8) score += 1;
+  // 3. Contains numbers
+  if (/\d/.test(pass)) score += 1;
+  // 4. Contains uppercase
+  if (/[A-Z]/.test(pass)) score += 1;
+  // 5. Contains special characters
+  if (/[^A-Za-z0-9]/.test(pass)) score += 1;
+
+  if (score === 0) return { score, label: 'Incompleta', color: '#999', width: '10%' };
+  if (score <= 2) return { score, label: 'Fraca 🔴', color: '#EF4444', width: '30%' };
+  if (score <= 4) return { score, label: 'Média 🟡', color: '#F59E0B', width: '60%' };
+  return { score, label: 'Forte 🟢', color: '#10B981', width: '100%' };
+};
+
 export default function RegisterScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -141,6 +163,45 @@ export default function RegisterScreen() {
                 <FontAwesome name={showPassword ? 'eye' : 'eye-slash'} size={16} color={colors.textSecondary} />
               </Pressable>
             </RNView>
+
+            {/* Password Strength Indicator */}
+            {password.length > 0 && (
+              <RNView style={styles.strengthContainer}>
+                <RNView style={styles.strengthBarWrapper}>
+                  <RNView 
+                    style={[
+                      styles.strengthBar, 
+                      { 
+                        width: checkPasswordStrength(password).width as any, 
+                        backgroundColor: checkPasswordStrength(password).color 
+                      }
+                    ]} 
+                  />
+                </RNView>
+                <RNView style={styles.strengthTextRow}>
+                  <Text style={[styles.strengthLabel, { color: colors.textSecondary }]}>Complexidade:</Text>
+                  <Text style={[styles.strengthText, { color: checkPasswordStrength(password).color }]}>
+                    {checkPasswordStrength(password).label}
+                  </Text>
+                </RNView>
+                
+                {/* Visual Feedback Requirements */}
+                <RNView style={styles.requirementsContainer}>
+                  <RNView style={styles.requirementRow}>
+                    <FontAwesome name={password.length >= 6 ? 'check-circle' : 'circle-o'} size={10} color={password.length >= 6 ? '#10B981' : colors.textTertiary} />
+                    <Text style={[styles.requirementText, { color: password.length >= 6 ? '#10B981' : colors.textTertiary }]}>Mínimo de 6 caracteres</Text>
+                  </RNView>
+                  <RNView style={styles.requirementRow}>
+                    <FontAwesome name={/\d/.test(password) ? 'check-circle' : 'circle-o'} size={10} color={/\d/.test(password) ? '#10B981' : colors.textTertiary} />
+                    <Text style={[styles.requirementText, { color: /\d/.test(password) ? '#10B981' : colors.textTertiary }]}>Pelo menos um número</Text>
+                  </RNView>
+                  <RNView style={styles.requirementRow}>
+                    <FontAwesome name={/[A-Z]/.test(password) ? 'check-circle' : 'circle-o'} size={10} color={/[A-Z]/.test(password) ? '#10B981' : colors.textTertiary} />
+                    <Text style={[styles.requirementText, { color: /[A-Z]/.test(password) ? '#10B981' : colors.textTertiary }]}>Pelo menos uma letra maiúscula</Text>
+                  </RNView>
+                </RNView>
+              </RNView>
+            )}
           </RNView>
 
           {/* Confirm Password Input */}
@@ -311,5 +372,48 @@ const styles = StyleSheet.create({
   loginLink: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  strengthContainer: {
+    marginTop: 8,
+    gap: 4,
+  },
+  strengthBarWrapper: {
+    height: 4,
+    width: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  strengthBar: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  strengthTextRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  strengthLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  strengthText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  requirementsContainer: {
+    marginTop: 6,
+    gap: 4,
+    paddingLeft: 4,
+  },
+  requirementRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  requirementText: {
+    fontSize: 10,
+    fontWeight: '500',
   },
 });
