@@ -13,7 +13,7 @@ export default function RootIndex() {
       if (user) {
         router.replace('/(tabs)');
       } else {
-        router.replace('/auth/register');
+        router.replace('/auth/login');
       }
     }
   }, [user, isLoading, router]);

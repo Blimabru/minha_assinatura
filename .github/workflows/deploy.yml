@@ -17,25 +17,39 @@ jobs:
 
     steps:
       # ------------------------------------------------------------------------
-      # PASSO 1: CONEXÃO SSH
+      # PASSO 1: CHECKOUT DO CÓDIGO
       # ------------------------------------------------------------------------
-      # Conecta ao servidor de produção utilizando chaves SSH armazenadas de 
-      # forma segura nos GitHub Secrets.
-      - name: Conexão e Execução no Servidor
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          # Credenciais requeridas para a autenticação SSH.
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          
-          # --------------------------------------------------------------------
-          # PASSO 2: SCRIPT DE ATUALIZAÇÃO E DEPLOY
-          # --------------------------------------------------------------------
-          # Comandos executados sequencialmente no terminal do servidor remoto.
-          # O caminho do diretório deve corresponder à instalação real.
-          script: |
-            echo "Iniciando rotina de deploy..."
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # ------------------------------------------------------------------------
+      # PASSO 2: INSTALAR CLOUDFLARED NO RUNNER
+      # ------------------------------------------------------------------------
+      - name: Install cloudflared
+        run: |
+          echo "Instalando cloudflared no runner do GitHub..."
+          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i cloudflared.deb
+
+      # ------------------------------------------------------------------------
+      # PASSO 3: CONFIGURAR CHAVE SSH NO RUNNER
+      # ------------------------------------------------------------------------
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SERVER_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          # Desabilita verificação estrita de host para evitar bloqueios interativos no terminal
+          echo "StrictHostKeyChecking no" >> ~/.ssh/config
+
+      # ------------------------------------------------------------------------
+      # PASSO 4: EXECUTAR DEPLOY VIA TÚNEL DO CLOUDFLARE
+      # ------------------------------------------------------------------------
+      - name: Run Deploy via Cloudflare Tunnel
+        run: |
+          echo "Conectando ao servidor protegido por Cloudflare Tunnel..."
+          ssh -i ~/.ssh/id_rsa -o ProxyCommand="/usr/bin/cloudflared access ssh --hostname %h --id ${{ secrets.CF_CLIENT_ID }} --secret ${{ secrets.CF_CLIENT_SECRET }}" ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            echo "Iniciando rotina de deploy no servidor..."
             
             # Navega até o diretório raiz do projeto
             cd /var/www/minha-assinatura
@@ -47,4 +61,8 @@ jobs:
             cd api
             docker-compose up -d --build
             
-            echo "Rotina de deploy finalizada."
+            # Sincroniza a estrutura do banco de dados externo com o novo Schema da API
+            docker-compose run --rm api npx prisma db push
+            
+            echo "Rotina de deploy finalizada com sucesso."
+          EOF

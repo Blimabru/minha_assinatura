@@ -1,0 +1,69 @@
+// ==============================================================================
+// PRISMA SCHEMA - CONFIGURAÇÃO DO BANCO DE DADOS
+// ==============================================================================
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                 String   @id // ID gerado pelo WatermelonDB (ou no registro)
+  name               String
+  email              String   @unique
+  passwordHash       String   @map("password_hash")
+  currencyPreference String   @default("BRL") @map("currency_preference")
+  createdAt          Float    @map("created_at") // Unix timestamp em ms (Float para evitar problemas de serialização BigInt)
+  updatedAt          Float    @map("updated_at") // Unix timestamp em ms
+  deletedAt          Float?   @map("deleted_at") // Soft delete
+
+  categories         Category[]
+  subscriptions      Subscription[]
+
+  @@map("users")
+}
+
+model Category {
+  id            String         @id // ID gerado pelo WatermelonDB
+  name          String
+  icon          String
+  createdAt     Float          @map("created_at") // Unix timestamp em ms
+  updatedAt     Float          @map("updated_at") // Unix timestamp em ms
+  deletedAt     Float?         @map("deleted_at") // Soft delete
+  
+  userId        String         @map("user_id")
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  subscriptions Subscription[]
+
+  @@map("categories")
+}
+
+model Subscription {
+  id             String   @id // ID gerado pelo WatermelonDB
+  userId         String   @map("user_id")
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  categoryId     String   @map("category_id")
+  category       Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  serviceName    String   @map("service_name")
+  value          Float
+  currency       String
+  billingDate    Int      @map("billing_date")
+  isActive       Boolean  @map("is_active")
+  status         String
+  recurrence     String
+  dueDate        String   @map("due_date")
+  notificationId String?  @map("notification_id")
+  
+  createdAt      Float    @map("created_at") // Unix timestamp em ms
+  updatedAt      Float    @map("updated_at") // Unix timestamp em ms
+  deletedAt      Float?   @map("deleted_at") // Soft delete
+
+  @@map("subscriptions")
+}
