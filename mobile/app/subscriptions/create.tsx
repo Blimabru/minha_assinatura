@@ -15,6 +15,7 @@ import { useTopAlert } from '../../src/hooks/useTopAlert';
 import { useAuth } from '@/src/contexts/AuthContext';
 import {
   buildSubscriptionDueDate,
+  calculateNextDueDate,
   SUBSCRIPTION_RECURRENCE_OPTIONS,
   type SubscriptionRecurrence,
 } from '../../src/utils/subscriptionSchedule';
@@ -248,7 +249,7 @@ export default function CreateSubscriptionScreen() {
           subscription.isActive = true;
           subscription.status = 'active';
           subscription.recurrence = formData.recurrence;
-          subscription.dueDate = dueDate;
+          subscription.dueDate = calculateNextDueDate(dueDate, formData.recurrence);
         });
       });
 

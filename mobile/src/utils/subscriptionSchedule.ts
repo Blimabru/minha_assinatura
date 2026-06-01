@@ -100,3 +100,36 @@ export function formatSubscriptionDueDate(dueDate?: string, fallbackBillingDate?
 
   return 'sem data';
 }
+
+export function calculateNextDueDate(startDateStr: string, recurrence: string): string {
+  try {
+    const parts = startDateStr.split('-');
+    if (parts.length !== 3) return startDateStr;
+    
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    
+    const date = new Date(year, month, day);
+    
+    if (recurrence === 'trimestral') {
+      date.setMonth(date.getMonth() + 3);
+    } else if (recurrence === 'semestral') {
+      date.setMonth(date.getMonth() + 6);
+    } else if (recurrence === 'anual') {
+      date.setFullYear(date.getFullYear() + 1);
+    } else {
+      // mensal
+      date.setMonth(date.getMonth() + 1);
+    }
+    
+    const nextYear = date.getFullYear();
+    const nextMonth = String(date.getMonth() + 1).padStart(2, '0');
+    const nextDay = String(date.getDate()).padStart(2, '0');
+    
+    return `${nextYear}-${nextMonth}-${nextDay}`;
+  } catch (e) {
+    return startDateStr;
+  }
+}
+
