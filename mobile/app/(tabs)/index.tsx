@@ -24,7 +24,7 @@ export default function TabOneScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
 
   const { loading, activeSubscriptions, monthlyTotal, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
 
@@ -202,7 +202,7 @@ export default function TabOneScreen() {
 
       <View style={styles.header}>
         <View>
-          <Text style={[styles.greeting, { color: colors.text }]}>Olá, Kéven</Text>
+          <Text style={[styles.greeting, { color: colors.text }]}>Olá, {user?.name || 'Usuário'}</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Veja abaixo seus próximos vencimentos.</Text>
         </View>
         <View style={styles.headerActions}>
