@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { FlatList, Pressable, StyleSheet, ScrollView, Alert, ActivityIndicator, View as RNView } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useSubscriptions } from '@/database/hooks/useSubscriptions';
 import { formatCurrencyByCode } from '../../src/utils/formatCurrency';
@@ -424,13 +424,13 @@ export default function ReportsScreen() {
             keyExtractor={(item) => item.category}
             scrollEnabled={false}
             renderItem={({ item }) => (
-              <View style={[styles.chartRow, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
+              <RNView style={[styles.chartRow, { backgroundColor: colors.background, borderColor: colors.cardBorder }]}>
                 <Text style={[styles.chartLabel, { color: colors.text }]}>{item.category}</Text>
                 <Text style={[styles.chartAmount, { color: colors.textSecondary }]}>{formatCurrencyByCode(item.total, 'BRL')}</Text>
-                <View style={[styles.chartBarTrack, { backgroundColor: colors.chartTrackBg }]}> 
-                  <View style={[styles.chartBarFill, { width: item.width, backgroundColor: colors.tint }]} />
-                </View>
-              </View>
+                <RNView style={[styles.chartBarTrack, { backgroundColor: colors.chartTrackBg }]}> 
+                  <RNView style={[styles.chartBarFill, { width: item.width, backgroundColor: colors.tint }]} />
+                </RNView>
+              </RNView>
             )}
           />
         ) : (
