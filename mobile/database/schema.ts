@@ -16,8 +16,8 @@ import { appSchema, tableSchema } from '@nozbe/watermelondb';
 export const schema = appSchema({
   // Versão do schema.
   // Sempre aumente quando alterar tabelas/colunas (com migração correspondente).
-  // Atualizado para 5 após adição de `is_admin` em users.
-  version: 5,
+  // Atualizado para 6 após adição de `is_premium` em users.
+  version: 6,
 
   // Lista de tabelas do banco.
   tables: [
@@ -33,6 +33,7 @@ export const schema = appSchema({
         { name: 'password_hash', type: 'string' }, // Hash da senha para segurança.
         { name: 'currency_preference', type: 'string' }, // Preferência de moeda (BRL/USD).
         { name: 'is_admin', type: 'boolean' }, // Se o usuário é administrador.
+        { name: 'is_premium', type: 'boolean' }, // Se o usuário é premium.
         { name: 'created_at', type: 'number' }, // Timestamp de criação.
         { name: 'updated_at', type: 'number' }, // Timestamp da última atualização.
       ],

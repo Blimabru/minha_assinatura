@@ -27,4 +27,12 @@ export class AuthController {
   async getMe(@GetUser() user: any) {
     return user;
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('premium')
+  @HttpCode(HttpStatus.OK)
+  async setPremium(@GetUser() user: any, @Body('isPremium') isPremium: boolean) {
+    const value = isPremium !== undefined ? isPremium : true;
+    return this.authService.setPremiumStatus(user.id, value);
+  }
 }

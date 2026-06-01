@@ -372,4 +372,51 @@ export class SyncService {
       },
     });
   }
+
+  async updateAd(id: string, title: string, description: string, icon: string, color: string) {
+    return this.prisma.ad.update({
+      where: { id },
+      data: {
+        title,
+        description,
+        icon,
+        color,
+      },
+    });
+  }
+
+  async deleteAd(id: string) {
+    return this.prisma.ad.delete({
+      where: { id },
+    });
+  }
+
+  async updateCoupon(id: string, data: {
+    serviceName: string;
+    description: string;
+    discountCode: string;
+    discountPercentage: number;
+    externalLink: string;
+    affiliateLink: string;
+    category: string;
+  }) {
+    return this.prisma.coupon.update({
+      where: { id },
+      data: {
+        serviceName: data.serviceName,
+        description: data.description,
+        discountCode: data.discountCode,
+        discountPercentage: Number(data.discountPercentage),
+        externalLink: data.externalLink,
+        affiliateLink: data.affiliateLink,
+        category: data.category,
+      },
+    });
+  }
+
+  async deleteCoupon(id: string) {
+    return this.prisma.coupon.delete({
+      where: { id },
+    });
+  }
 }

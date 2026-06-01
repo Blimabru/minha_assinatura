@@ -37,6 +37,7 @@ export class AuthService {
         passwordHash,
         currencyPreference: currencyPreference || 'BRL',
         isAdmin: email === 'bru.no@outlook.com.br' || email.includes('admin'),
+        isPremium: false,
         createdAt: now,
         updatedAt: now,
       },
@@ -78,6 +79,15 @@ export class AuthService {
       token,
       user: userWithoutPassword,
     };
+  }
+
+  async setPremiumStatus(userId: string, isPremium: boolean) {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { isPremium },
+    });
+    const { passwordHash: _, ...userWithoutPassword } = user;
+    return userWithoutPassword;
   }
 
   private generateToken(userId: string, email: string): string {

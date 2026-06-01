@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Switch, Pressable, ActivityIndicator, Modal, TextInput, ScrollView, Alert, Platform } from 'react-native';
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
@@ -62,6 +62,97 @@ export default function SettingsScreen() {
   const [category, setCategory] = useState('Streaming');
   const [couponLoading, setCouponLoading] = useState(false);
 
+  // Dynamic admin lists
+  const [serverAds, setServerAds] = useState<any[]>([]);
+  const [serverCoupons, setServerCoupons] = useState<any[]>([]);
+  const [loadingServerData, setLoadingServerData] = useState(false);
+  const [editingAd, setEditingAd] = useState<any | null>(null);
+  const [editingCoupon, setEditingCoupon] = useState<any | null>(null);
+
+  const loadServerData = async () => {
+    if (!isAdmin) return;
+    setLoadingServerData(true);
+    try {
+      const token = await AsyncStorage.getItem(`user_${user?.email}_token`);
+      const [adsRes, couponsRes] = await Promise.all([
+        fetch(`${API_URL}/sync/ads`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }),
+        fetch(`${API_URL}/sync/coupons`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+      ]);
+
+      if (adsRes.ok) {
+        const adsData = await adsRes.json();
+        setServerAds(adsData);
+      }
+      if (couponsRes.ok) {
+        const couponsData = await couponsRes.json();
+        setServerCoupons(couponsData);
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar dados do servidor:', e);
+    } finally {
+      setLoadingServerData(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAdmin) {
+      loadServerData();
+    }
+  }, [isAdmin]);
+
+  const handleNewAd = () => {
+    setEditingAd(null);
+    setAdTitle('');
+    setAdDesc('');
+    setAdIcon('gift');
+    setAdColor('#3B82F6');
+    setAdModalVisible(true);
+  };
+
+  const handleEditAd = (ad: any) => {
+    setEditingAd(ad);
+    setAdTitle(ad.title);
+    setAdDesc(ad.description);
+    setAdIcon(ad.icon);
+    setAdColor(ad.color);
+    setAdModalVisible(true);
+  };
+
+  const handleDeleteAd = async (id: string) => {
+    Alert.alert(
+      'Confirmar Exclusão',
+      'Tem certeza de que deseja excluir este anúncio?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem(`user_${user?.email}_token`);
+              const response = await fetch(`${API_URL}/sync/ads/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              if (response.ok) {
+                Alert.alert('Sucesso', 'Anúncio excluído com sucesso.');
+                loadServerData();
+              } else {
+                throw new Error();
+              }
+            } catch (e) {
+              Alert.alert('Erro', 'Não foi possível excluir o anúncio.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const handleSaveAd = async () => {
     if (!adTitle.trim() || !adDesc.trim()) {
       Alert.alert('Erro', 'Por favor, preencha o título e a descrição.');
@@ -72,8 +163,11 @@ export default function SettingsScreen() {
 
     try {
       const token = await AsyncStorage.getItem(`user_${user?.email}_token`);
-      const response = await fetch(`${API_URL}/sync/ads`, {
-        method: 'POST',
+      const method = editingAd ? 'PUT' : 'POST';
+      const endpoint = editingAd ? `${API_URL}/sync/ads/${editingAd.id}` : `${API_URL}/sync/ads`;
+
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -90,15 +184,72 @@ export default function SettingsScreen() {
         throw new Error('Falha ao salvar anúncio.');
       }
 
-      Alert.alert('Sucesso', 'Novo anúncio de afiliado salvo no banco de dados!');
+      Alert.alert('Sucesso', editingAd ? 'Anúncio atualizado com sucesso!' : 'Novo anúncio salvo com sucesso!');
       setAdTitle('');
       setAdDesc('');
       setAdModalVisible(false);
+      setEditingAd(null);
+      loadServerData();
     } catch (e) {
       Alert.alert('Erro', 'Não foi possível salvar o anúncio no servidor.');
     } finally {
       setAdLoading(false);
     }
+  };
+
+  const handleNewCoupon = () => {
+    setEditingCoupon(null);
+    setServiceName('');
+    setCouponDesc('');
+    setCouponCode('');
+    setCouponPercentage('');
+    setExternalLink('');
+    setAffiliateLink('');
+    setCategory('Streaming');
+    setCouponModalVisible(true);
+  };
+
+  const handleEditCoupon = (coupon: any) => {
+    setEditingCoupon(coupon);
+    setServiceName(coupon.serviceName);
+    setCouponDesc(coupon.description);
+    setCouponCode(coupon.discountCode);
+    setCouponPercentage(String(coupon.discountPercentage));
+    setExternalLink(coupon.externalLink);
+    setAffiliateLink(coupon.affiliateLink);
+    setCategory(coupon.category);
+    setCouponModalVisible(true);
+  };
+
+  const handleDeleteCoupon = async (id: string) => {
+    Alert.alert(
+      'Confirmar Exclusão',
+      'Tem certeza de que deseja excluir este cupom?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem(`user_${user?.email}_token`);
+              const response = await fetch(`${API_URL}/sync/coupons/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              if (response.ok) {
+                Alert.alert('Sucesso', 'Cupom excluído com sucesso.');
+                loadServerData();
+              } else {
+                throw new Error();
+              }
+            } catch (e) {
+              Alert.alert('Erro', 'Não foi possível excluir o cupom.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const handleSaveCoupon = async () => {
@@ -111,8 +262,11 @@ export default function SettingsScreen() {
 
     try {
       const token = await AsyncStorage.getItem(`user_${user?.email}_token`);
-      const response = await fetch(`${API_URL}/sync/coupons`, {
-        method: 'POST',
+      const method = editingCoupon ? 'PUT' : 'POST';
+      const endpoint = editingCoupon ? `${API_URL}/sync/coupons/${editingCoupon.id}` : `${API_URL}/sync/coupons`;
+
+      const response = await fetch(endpoint, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -132,7 +286,7 @@ export default function SettingsScreen() {
         throw new Error('Falha ao salvar cupom.');
       }
 
-      Alert.alert('Sucesso', 'Novo cupom de afiliado salvo no banco de dados!');
+      Alert.alert('Sucesso', editingCoupon ? 'Cupom atualizado com sucesso!' : 'Novo cupom salvo com sucesso!');
       setServiceName('');
       setCouponDesc('');
       setCouponCode('');
@@ -140,6 +294,8 @@ export default function SettingsScreen() {
       setExternalLink('');
       setAffiliateLink('');
       setCouponModalVisible(false);
+      setEditingCoupon(null);
+      loadServerData();
     } catch (e) {
       Alert.alert('Erro', 'Não foi possível salvar o cupom no servidor.');
     } finally {
@@ -327,7 +483,7 @@ export default function SettingsScreen() {
 
           <View style={[styles.syncFooter, { borderTopColor: colors.cardBorder }]}>
             <Pressable
-              onPress={() => setAdModalVisible(true)}
+              onPress={handleNewAd}
               style={({ pressed }) => [
                 styles.syncButton,
                 { 
@@ -344,7 +500,7 @@ export default function SettingsScreen() {
             </Pressable>
 
             <Pressable
-              onPress={() => setCouponModalVisible(true)}
+              onPress={handleNewCoupon}
               style={({ pressed }) => [
                 styles.syncButton,
                 { 
@@ -360,6 +516,58 @@ export default function SettingsScreen() {
               </View>
             </Pressable>
           </View>
+
+          {/* List parameters: Dynamic active Ads */}
+          {serverAds.length > 0 && (
+            <View style={{ marginTop: 16 }}>
+              <Text style={[styles.adminSectionTitle, { color: colors.text }]}>Anúncios Ativos ({serverAds.length})</Text>
+              {serverAds.map((ad) => (
+                <View key={ad.id} style={[styles.adminListItem, { borderColor: colors.cardBorder }]}>
+                  <View style={styles.adminListContent}>
+                    <FontAwesome name={ad.icon} size={14} color={ad.color} style={{ marginRight: 8 }} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.adminListTitle, { color: colors.text }]} numberOfLines={1}>{ad.title}</Text>
+                      <Text style={[styles.adminListDesc, { color: colors.textSecondary }]} numberOfLines={1}>{ad.description}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.adminListActions}>
+                    <Pressable onPress={() => handleEditAd(ad)} style={styles.adminActionButton}>
+                      <FontAwesome name="pencil" size={14} color={colors.tint} />
+                    </Pressable>
+                    <Pressable onPress={() => handleDeleteAd(ad.id)} style={styles.adminActionButton}>
+                      <FontAwesome name="trash" size={14} color="#EF4444" />
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* List parameters: Dynamic active Coupons */}
+          {serverCoupons.length > 0 && (
+            <View style={{ marginTop: 16 }}>
+              <Text style={[styles.adminSectionTitle, { color: colors.text }]}>Cupons Ativos ({serverCoupons.length})</Text>
+              {serverCoupons.map((coupon) => (
+                <View key={coupon.id} style={[styles.adminListItem, { borderColor: colors.cardBorder }]}>
+                  <View style={styles.adminListContent}>
+                    <FontAwesome name="tag" size={14} color={colors.tint} style={{ marginRight: 8 }} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.adminListTitle, { color: colors.text }]} numberOfLines={1}>{coupon.serviceName} ({coupon.discountCode})</Text>
+                      <Text style={[styles.adminListDesc, { color: colors.textSecondary }]} numberOfLines={1}>{coupon.description}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.adminListActions}>
+                    <Pressable onPress={() => handleEditCoupon(coupon)} style={styles.adminActionButton}>
+                      <FontAwesome name="pencil" size={14} color={colors.tint} />
+                    </Pressable>
+                    <Pressable onPress={() => handleDeleteCoupon(coupon.id)} style={styles.adminActionButton}>
+                      <FontAwesome name="trash" size={14} color="#EF4444" />
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
         </View>
       )}
 
@@ -380,7 +588,7 @@ export default function SettingsScreen() {
       {/* MODAL ADMIN: ADICIONAR ANÚNCIO */}
       <Modal visible={adModalVisible} animationType="slide" onRequestClose={() => setAdModalVisible(false)}>
         <ScrollView contentContainerStyle={styles.adminModalContainer} style={{ backgroundColor: colors.background }}>
-          <Text style={[styles.adminModalTitle, { color: colors.text }]}>Adicionar Novo Anúncio</Text>
+          <Text style={[styles.adminModalTitle, { color: colors.text }]}>{editingAd ? 'Editar Anúncio' : 'Adicionar Novo Anúncio'}</Text>
           
           <Text style={[styles.adminModalLabel, { color: colors.text }]}>Título:</Text>
           <TextInput
@@ -448,7 +656,7 @@ export default function SettingsScreen() {
       {/* MODAL ADMIN: ADICIONAR CUPOM */}
       <Modal visible={couponModalVisible} animationType="slide" onRequestClose={() => setCouponModalVisible(false)}>
         <ScrollView contentContainerStyle={styles.adminModalContainer} style={{ backgroundColor: colors.background }}>
-          <Text style={[styles.adminModalTitle, { color: colors.text }]}>Adicionar Novo Cupom</Text>
+          <Text style={[styles.adminModalTitle, { color: colors.text }]}>{editingCoupon ? 'Editar Cupom' : 'Adicionar Novo Cupom'}</Text>
           
           <Text style={[styles.adminModalLabel, { color: colors.text }]}>Nome do Serviço:</Text>
           <TextInput
@@ -540,6 +748,45 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 40,
+  },
+  adminSectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  adminListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderRadius: 10,
+    marginBottom: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+  },
+  adminListContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    paddingRight: 10,
+  },
+  adminListTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  adminListDesc: {
+    fontSize: 10,
+    marginTop: 2,
+  },
+  adminListActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  adminActionButton: {
+    padding: 6,
+    borderRadius: 6,
   },
   title: {
     fontSize: 26, fontWeight: '800', marginBottom: 12

@@ -19,6 +19,7 @@ export default class User extends Model {
   @text('password_hash') passwordHash!: string;
   @text('currency_preference') currencyPreference!: string;
   @field('is_admin') isAdmin!: boolean;
+  @field('is_premium') isPremium!: boolean;
 
   // Consulta reativa das assinaturas desse usuário.
   @children('subscriptions') subscriptions!: Query<Subscription>;

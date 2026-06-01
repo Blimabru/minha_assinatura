@@ -88,10 +88,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const userJson = await AsyncStorage.getItem('user');
         if (userJson) {
           const userObj = JSON.parse(userJson);
-          const isPremiumStr = await AsyncStorage.getItem(`user_premium_${userObj.email}`);
+          const token = await AsyncStorage.getItem(`user_${userObj.email}_token`);
+          
+          let refreshedUser = userObj;
+          let isPremium = false;
+          
+          try {
+            const response = await fetch(`${API_URL}/auth/me`, {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+            });
+            if (response.ok) {
+              const remoteUser = await response.json();
+              if (remoteUser) {
+                refreshedUser = { ...userObj, ...remoteUser };
+                isPremium = remoteUser.isPremium === true;
+                await AsyncStorage.setItem('user', JSON.stringify(refreshedUser));
+                await AsyncStorage.setItem(`user_premium_${userObj.email}`, isPremium ? 'true' : 'false');
+              }
+            }
+          } catch (fetchErr) {
+            console.warn('Sem rede ao restaurar token. Usando cache local.');
+            const cachedPremium = await AsyncStorage.getItem(`user_premium_${userObj.email}`);
+            isPremium = cachedPremium === 'true';
+          }
+
           dispatch({ 
             type: 'RESTORE_TOKEN', 
-            payload: { user: userObj, isPremium: isPremiumStr === 'true' } 
+            payload: { user: refreshedUser, isPremium } 
           });
         } else {
           dispatch({ type: 'RESTORE_TOKEN', payload: { user: null, isPremium: false } });
@@ -189,9 +214,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         if (!state.user) return;
         const email = state.user.email;
+        const token = await AsyncStorage.getItem(`user_${email}_token`);
+        const response = await fetch(`${API_URL}/auth/premium`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ isPremium: true }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Falha ao registrar compra no servidor.');
+        }
+
+        const refreshedUser = { ...state.user, isPremium: true };
+        await AsyncStorage.setItem('user', JSON.stringify(refreshedUser));
         await AsyncStorage.setItem(`user_premium_${email}`, 'true');
+        
         dispatch({ type: 'SET_PREMIUM', payload: true });
       } catch (e) {
+        console.warn('Erro ao comprar premium:', e);
         throw new Error('Falha ao registrar compra.');
       }
     },

@@ -49,6 +49,15 @@ export const migrations = schemaMigrations({
         }),
       ],
     },
+    {
+      toVersion: 6,
+      steps: [
+        addColumns({
+          table: 'users',
+          columns: [{ name: 'is_premium', type: 'boolean' }],
+        }),
+      ],
+    },
   ],
 });
 

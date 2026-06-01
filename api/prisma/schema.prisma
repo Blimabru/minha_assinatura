@@ -18,6 +18,7 @@ model User {
   passwordHash       String   @map("password_hash")
   currencyPreference String   @default("BRL") @map("currency_preference")
   isAdmin            Boolean  @default(false) @map("is_admin")
+  isPremium          Boolean  @default(false) @map("is_premium")
   createdAt          Float    @map("created_at") // Unix timestamp em ms (Float para evitar problemas de serialização BigInt)
   updatedAt          Float    @map("updated_at") // Unix timestamp em ms
   deletedAt          Float?   @map("deleted_at") // Soft delete
