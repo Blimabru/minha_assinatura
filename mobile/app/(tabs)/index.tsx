@@ -12,6 +12,7 @@ import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import CardItem from '../../src/components/UI/CardItem';
 import { useAuth } from '@/src/contexts/AuthContext';
+import AdBanner from '@/components/AdBanner';
 import {
   buildSubscriptionDueDate,
   splitSubscriptionDueDate,
@@ -266,6 +267,8 @@ export default function TabOneScreen() {
           />
         )}
       />
+
+      <AdBanner />
 
       <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={closeActionMenu}>
         <Pressable style={styles.menuOverlay} onPress={closeActionMenu}>

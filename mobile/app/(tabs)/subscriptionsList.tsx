@@ -15,6 +15,7 @@ import {
   type SubscriptionRecurrence,
 } from '../../src/utils/subscriptionSchedule';
 import { Picker } from '@react-native-picker/picker';
+import AdBanner from '@/components/AdBanner';
 
 export default function SubscriptionsListScreen() {
   const { TopAlert, showError, showSuccess } = useTopAlert();
@@ -228,6 +229,8 @@ export default function SubscriptionsListScreen() {
           />
         )}
       />
+
+      <AdBanner />
 
       <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={closeActionMenu}>
         <Pressable style={styles.menuOverlay} onPress={closeActionMenu}>

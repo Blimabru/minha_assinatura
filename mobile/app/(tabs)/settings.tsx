@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, Switch, Pressable, ActivityIndicator } from 'react-native';
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useSync } from '@/src/contexts/SyncContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { useAuth } from '@/src/contexts/AuthContext';
+import PurchaseModal from '@/components/PurchaseModal';
 
 /*
   settings.tsx
@@ -19,6 +21,8 @@ export default function SettingsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { syncStatus, lastSyncedAt, syncInBackground } = useSync();
+  const { isPremium } = useAuth();
+  const [purchaseModalVisible, setPurchaseModalVisible] = useState(false);
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -127,6 +131,59 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      {/* Bloco Premium / Remover Anúncios */}
+      <View style={[styles.syncCard, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
+        <View style={styles.syncHeader}>
+          <View style={styles.syncTitleContainer}>
+            <FontAwesome name="star" size={18} color="#F5A623" style={styles.syncHeaderIcon} />
+            <Text style={[styles.syncTitle, { color: colors.text }]}>Versão do Aplicativo</Text>
+          </View>
+          {isPremium ? (
+            <View style={[styles.statusBadge, { backgroundColor: '#F5A623' }]}>
+              <Text style={styles.statusBadgeText}>Premium</Text>
+            </View>
+          ) : (
+            <View style={[styles.statusBadge, { backgroundColor: colors.tint }]}>
+              <Text style={styles.statusBadgeText}>Gratuito</Text>
+            </View>
+          )}
+        </View>
+
+        {isPremium ? (
+          <Text style={[styles.syncText, { color: colors.textSecondary }]}>
+            Parabéns! Você tem acesso vitalício à versão Premium. Todos os anúncios foram permanentemente desativados.
+          </Text>
+        ) : (
+          <>
+            <Text style={[styles.syncText, { color: colors.textSecondary }]}>
+              Você está utilizando a versão gratuita com suporte a anúncios. Remova-os agora mesmo!
+            </Text>
+            <View style={[styles.syncFooter, { borderTopColor: colors.cardBorder }]}>
+              <Text style={[styles.lastSyncText, { color: colors.textTertiary }]}>
+                Apenas R$ 5,00 (Taxa única)
+              </Text>
+              
+              <Pressable
+                onPress={() => setPurchaseModalVisible(true)}
+                style={({ pressed }) => [
+                  styles.syncButton,
+                  { 
+                    backgroundColor: '#F5A623',
+                    borderColor: '#F5A623',
+                    opacity: pressed ? 0.8 : 1,
+                  }
+                ]}
+              >
+                <View style={styles.syncButtonContent}>
+                  <FontAwesome name="star" size={12} color="#FFF" style={{ marginRight: 6 }} />
+                  <Text style={[styles.syncButtonText, { color: '#FFF' }]}>Remover Anúncios</Text>
+                </View>
+              </Pressable>
+            </View>
+          </>
+        )}
+      </View>
+
       <View style={[styles.row, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
         <Text style={[styles.label, { color: colors.text }]}>Otimização de Bateria</Text>
         <Switch value={true} onValueChange={() => {}} trackColor={{ false: colors.inputBackground, true: colors.tint }} thumbColor={colors.textInverse} />
@@ -136,6 +193,8 @@ export default function SettingsScreen() {
         <Text style={[styles.label, { color: colors.text }]}>Notificações</Text>
         <Switch value={true} onValueChange={() => {}} trackColor={{ false: colors.inputBackground, true: colors.tint }} thumbColor={colors.textInverse} />
       </View>
+
+      <PurchaseModal visible={purchaseModalVisible} onClose={() => setPurchaseModalVisible(false)} />
     </View>
   );
 }
