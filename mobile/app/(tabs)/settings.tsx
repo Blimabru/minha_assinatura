@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Switch, Pressable, ActivityIndicator, Modal, TextInput, ScrollView, Alert, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -34,8 +35,9 @@ const API_URL = getApiUrl();
 export default function SettingsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const router = useRouter();
   const { syncStatus, lastSyncedAt, syncInBackground } = useSync();
-  const { isPremium, user } = useAuth();
+  const { isPremium, user, signOut } = useAuth();
   const [purchaseModalVisible, setPurchaseModalVisible] = useState(false);
 
   // Admin visibility
@@ -340,6 +342,33 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleLogout = async () => {
+    Alert.alert(
+      'Fazer Logout',
+      'Tem certeza que deseja sair da sua conta?',
+      [
+        {
+          text: 'Cancelar',
+          onPress: () => {},
+          style: 'cancel',
+        },
+        {
+          text: 'Sair',
+          onPress: async () => {
+            try {
+              await signOut();
+              router.replace('/auth/register');
+            } catch (error) {
+              console.error(error);
+              Alert.alert('Erro', 'Erro ao fazer logout');
+            }
+          },
+          style: 'destructive',
+        },
+      ]
+    );
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}> 
       <View style={styles.headerConf}>
@@ -580,6 +609,23 @@ export default function SettingsScreen() {
         <Text style={[styles.label, { color: colors.text }]}>Notificações</Text>
         <Switch value={true} onValueChange={() => {}} trackColor={{ false: colors.inputBackground, true: colors.tint }} thumbColor={colors.textInverse} />
       </View>
+
+      <Pressable
+        onPress={handleLogout}
+        style={({ pressed }) => [
+          styles.row,
+          {
+            backgroundColor: colors.cardBackground,
+            borderColor: colors.cardBorder,
+            opacity: pressed ? 0.7 : 1,
+            marginTop: 16,
+            justifyContent: 'center',
+          }
+        ]}
+      >
+        <FontAwesome name="sign-out" size={18} color="#EF4444" style={{ marginRight: 8 }} />
+        <Text style={[styles.label, { color: '#EF4444', fontWeight: 'bold' }]}>Fazer Logout</Text>
+      </Pressable>
 
       </ScrollView>
 

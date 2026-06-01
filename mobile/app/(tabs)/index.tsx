@@ -28,7 +28,7 @@ export default function TabOneScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
-  const { signOut, user } = useAuth();
+  const { user } = useAuth();
 
   const { loading, activeSubscriptions, monthlyTotal, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
   const [hasUnread, setHasUnread] = useState(true);
@@ -41,33 +41,6 @@ export default function TabOneScreen() {
     };
     checkRead();
   }, [activeSubscriptions]);
-
-  const handleLogout = async () => {
-    Alert.alert(
-      'Fazer Logout',
-      'Tem certeza que deseja sair da sua conta?',
-      [
-        {
-          text: 'Cancelar',
-          onPress: () => {},
-          style: 'cancel',
-        },
-        {
-          text: 'Sair',
-          onPress: async () => {
-            try {
-              await signOut();
-              router.replace('/auth/register');
-            } catch (error) {
-              console.error(error);
-              showError('Erro ao fazer logout');
-            }
-          },
-          style: 'destructive',
-        },
-      ]
-    );
-  };
 
   const upcomingSubscriptions = useMemo(() => {
     return activeSubscriptions
@@ -238,12 +211,7 @@ export default function TabOneScreen() {
             <FontAwesome name="bell" size={20} color={colors.textSecondary} />
             {hasUnread && <View style={[styles.notificationDot, { backgroundColor: colors.tint }]} />}
           </Pressable>
-          <Pressable
-            style={[styles.notificationButton, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}
-            onPress={handleLogout}
-          >
-            <FontAwesome name="sign-out" size={20} color={colors.error} />
-          </Pressable>
+
         </View>
       </View>
 
