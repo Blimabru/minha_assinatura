@@ -190,7 +190,8 @@ export default function SettingsScreen() {
         <Text style={[styles.title, { color: colors.text }]}>Configurações</Text>
       </View>
 
-      {/* Bloco de Status da Sincronização Automática */}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Bloco de Status da Sincronização Automática */}
       <View style={[styles.syncCard, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
         <View style={styles.syncHeader}>
           <View style={styles.syncTitleContainer}>
@@ -372,6 +373,8 @@ export default function SettingsScreen() {
         <Switch value={true} onValueChange={() => {}} trackColor={{ false: colors.inputBackground, true: colors.tint }} thumbColor={colors.textInverse} />
       </View>
 
+      </ScrollView>
+
       <PurchaseModal visible={purchaseModalVisible} onClose={() => setPurchaseModalVisible(false)} />
 
       {/* MODAL ADMIN: ADICIONAR ANÚNCIO */}
@@ -534,6 +537,9 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1, padding: 16
+  },
+  scrollContent: {
+    paddingBottom: 40,
   },
   title: {
     fontSize: 26, fontWeight: '800', marginBottom: 12
