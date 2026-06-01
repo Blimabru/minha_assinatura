@@ -14,9 +14,11 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Badge from './Badge';
 import { formatCurrencyByCode } from '../../utils/formatCurrency';
+import { useCurrencyConversionToBRL } from '../../hooks/useCurrencyConversion';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import type { SubscriptionStatus } from '@/database/hooks/useSubscriptions';
+import type { SupportedCurrency } from '@/src/services/CurrencyConversionService';
 import { formatSubscriptionDueDate, getSubscriptionRecurrenceLabel, type SubscriptionRecurrence } from '../../utils/subscriptionSchedule';
 
 interface Props {
@@ -41,6 +43,17 @@ const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', value, cur
   const badgeColor = status === 'inactive' ? colors.inactiveBg : colors.cancelledBg;
   const badgeTextColor = status === 'inactive' ? colors.inactiveText : colors.cancelledText;
   const scheduleLabel = `${getSubscriptionRecurrenceLabel(recurrence)} • ${formatSubscriptionDueDate(dueDate, billingDate)}`;
+  const normalizeCurrency = (curr: string): SupportedCurrency => {
+    const upperCurr = curr.toUpperCase();
+    if (upperCurr === 'BRL' || upperCurr === 'USD' || upperCurr === 'EUR') {
+      return upperCurr as SupportedCurrency;
+    }
+    return 'BRL';
+  };
+
+  const normalizedCurrency = normalizeCurrency(currency);
+  const convertedValue = useCurrencyConversionToBRL(value, normalizedCurrency);
+  const formattedConverted = normalizedCurrency !== 'BRL' ? formatCurrencyByCode(convertedValue, 'BRL') : null;
 
   // Componente visual que aplica o layout do design: ícone + texto + ações
   return (
@@ -56,7 +69,9 @@ const CardItem: React.FC<Props> = ({ serviceName, iconName = 'music', value, cur
         <View style={styles.info}>
           <Text style={[styles.title, { color: colors.text }]}>{serviceName}</Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{scheduleLabel}</Text>
-          <Text style={[styles.price, { color: colors.text }]}>{formattedValue}</Text>
+          <Text style={[styles.price, { color: colors.text }]}>
+            {formattedValue}{formattedConverted ? ` = ${formattedConverted}` : ''}
+          </Text>
         </View>
       </View>
 

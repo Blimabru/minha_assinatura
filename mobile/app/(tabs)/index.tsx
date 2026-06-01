@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Modal, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -11,6 +11,7 @@ import { useTopAlert } from '../../src/hooks/useTopAlert';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
 import CardItem from '../../src/components/UI/CardItem';
+import { useAuth } from '@/src/contexts/AuthContext';
 import {
   buildSubscriptionDueDate,
   splitSubscriptionDueDate,
@@ -23,8 +24,36 @@ export default function TabOneScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const router = useRouter();
+  const { signOut } = useAuth();
 
   const { loading, activeSubscriptions, monthlyTotal, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Fazer Logout',
+      'Tem certeza que deseja sair da sua conta?',
+      [
+        {
+          text: 'Cancelar',
+          onPress: () => {},
+          style: 'cancel',
+        },
+        {
+          text: 'Sair',
+          onPress: async () => {
+            try {
+              await signOut();
+              router.replace('/auth/register');
+            } catch (error) {
+              console.error(error);
+              showError('Erro ao fazer logout');
+            }
+          },
+          style: 'destructive',
+        },
+      ]
+    );
+  };
 
   const upcomingSubscriptions = useMemo(() => {
     return activeSubscriptions
@@ -183,9 +212,15 @@ export default function TabOneScreen() {
           >
             <FontAwesome name="ticket" size={20} color={colors.textSecondary} />
           </Pressable>
-          <Pressable style={[styles.notificationButton, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder, marginLeft: 12 }]}> 
+          <Pressable style={[styles.notificationButton, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}> 
             <FontAwesome name="bell" size={20} color={colors.textSecondary} />
             <View style={[styles.notificationDot, { backgroundColor: colors.tint }]} />
+          </Pressable>
+          <Pressable
+            style={[styles.notificationButton, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}
+            onPress={handleLogout}
+          >
+            <FontAwesome name="sign-out" size={20} color={colors.error} />
           </Pressable>
         </View>
       </View>
@@ -396,9 +431,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   notificationButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
@@ -414,6 +449,7 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 8,
   },
   metricsRow: {
     flexDirection: 'row',

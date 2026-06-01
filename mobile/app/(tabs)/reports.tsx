@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { FlatList, Pressable, StyleSheet, View as RNView, ScrollView } from 'react-native';
+import { FlatList, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useSubscriptions } from '@/database/hooks/useSubscriptions';
 import { formatCurrencyByCode } from '../../src/utils/formatCurrency';

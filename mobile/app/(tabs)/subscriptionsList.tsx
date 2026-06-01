@@ -1,13 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, FlatList, Modal, Pressable, StyleSheet, TextInput, View as RNView } from 'react-native';
-import { useRouter } from 'expo-router';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-
+import { Alert, FlatList, Modal, Pressable, StyleSheet, TextInput } from 'react-native';
 import { Text, View } from '@/components/Themed';
 import { useSubscriptions, type SubscriptionItem, type SubscriptionStatus } from '@/database/hooks/useSubscriptions';
 import SearchBar from '../../src/components/UI/SearchBar';
 import CardItem from '../../src/components/UI/CardItem';
-import { formatCurrencyByCode, formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/utils/formatCurrency';
+import { formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/utils/formatCurrency';
 import { useTopAlert } from '../../src/hooks/useTopAlert';
 import { useColorScheme } from '@/components/useColorScheme';
 import Colors from '@/constants/Colors';
@@ -23,7 +20,6 @@ export default function SubscriptionsListScreen() {
   const { TopAlert, showError, showSuccess } = useTopAlert();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const router = useRouter();
 
   const { loading, items, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
 
