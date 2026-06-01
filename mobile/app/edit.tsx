@@ -11,6 +11,8 @@ import Colors from '@/constants/Colors';
 import {
   buildSubscriptionDueDate,
   splitSubscriptionDueDate,
+  calculateNextDueDate,
+  calculateSignatureDate,
   SUBSCRIPTION_RECURRENCE_OPTIONS,
   type SubscriptionRecurrence,
 } from '../src/utils/subscriptionSchedule';
@@ -40,7 +42,8 @@ export default function EditSubscriptionScreen() {
       setValor(formatCurrencyInput(String(Math.round(assinatura.value * 100))));
       setMoeda(assinatura.currency || 'BRL');
       setRecurrence(assinatura.recurrence);
-      const dueDateParts = splitSubscriptionDueDate(assinatura.dueDate);
+      const signatureDate = calculateSignatureDate(assinatura.dueDate || '', assinatura.recurrence);
+      const dueDateParts = splitSubscriptionDueDate(signatureDate);
       setDueDay(dueDateParts.day || String(assinatura.billingDate).padStart(2, '0'));
       setDueMonth(dueDateParts.month || String(new Date().getMonth() + 1).padStart(2, '0'));
       setDueYear(dueDateParts.year || String(new Date().getFullYear()));
@@ -63,21 +66,22 @@ useEffect(() => {
       return;
     }
 
-    const dueDate = buildSubscriptionDueDate(dueDay, dueMonth, dueYear);
-    if (!dueDate) {
-      Alert.alert('Aviso', 'Data de vencimento inválida.');
+    const signatureDate = buildSubscriptionDueDate(dueDay, dueMonth, dueYear);
+    if (!signatureDate) {
+      Alert.alert('Aviso', 'Data de assinatura inválida.');
       return;
     }
 
     try {
       const assinaturaId = Array.isArray(id) ? id[0] : id;
+      const nextDueDate = calculateNextDueDate(signatureDate, recurrence);
       
       // 4. USANDO A FUNÇÃO DE ATUALIZAÇÃO
       await updateSubscription(assinaturaId, {
         value: parseCurrencyStringToNumber(valor),
         billingDate: parseInt(dueDay, 10),
         recurrence,
-        dueDate,
+        dueDate: nextDueDate,
       });
       
       Alert.alert('Sucesso', 'Assinatura atualizada!');
@@ -115,7 +119,7 @@ useEffect(() => {
         </Picker>
       </View>
 
-      <Text style={[styles.label, { color: colors.text }]}>Vencimento (dia / mês / ano)</Text>
+      <Text style={[styles.label, { color: colors.text }]}>Data de Assinatura (dia / mês / ano)</Text>
       <View style={styles.dueDateRow}>
         <TextInput
           style={[styles.input, styles.dueDateInput, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}

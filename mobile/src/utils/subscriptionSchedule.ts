@@ -133,3 +133,37 @@ export function calculateNextDueDate(startDateStr: string, recurrence: string): 
   }
 }
 
+export function calculateSignatureDate(dueDateStr: string, recurrence: string): string {
+  try {
+    if (!dueDateStr) return '';
+    const parts = dueDateStr.split('-');
+    if (parts.length !== 3) return dueDateStr;
+    
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    
+    const date = new Date(year, month, day);
+    
+    if (recurrence === 'trimestral') {
+      date.setMonth(date.getMonth() - 3);
+    } else if (recurrence === 'semestral') {
+      date.setMonth(date.getMonth() - 6);
+    } else if (recurrence === 'anual') {
+      date.setFullYear(date.getFullYear() - 1);
+    } else {
+      // mensal
+      date.setMonth(date.getMonth() - 1);
+    }
+    
+    const prevYear = date.getFullYear();
+    const prevMonth = String(date.getMonth() + 1).padStart(2, '0');
+    const prevDay = String(date.getDate()).padStart(2, '0');
+    
+    return `${prevYear}-${prevMonth}-${prevDay}`;
+  } catch (e) {
+    return dueDateStr;
+  }
+}
+
+

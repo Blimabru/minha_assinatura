@@ -17,6 +17,8 @@ import AdBanner from '@/components/AdBanner';
 import {
   buildSubscriptionDueDate,
   splitSubscriptionDueDate,
+  calculateNextDueDate,
+  calculateSignatureDate,
   SUBSCRIPTION_RECURRENCE_OPTIONS,
   type SubscriptionRecurrence,
 } from '../../src/utils/subscriptionSchedule';
@@ -98,7 +100,8 @@ export default function TabOneScreen() {
     setEditCurrency(subscription.currency);
     setEditCategoryId(subscription.categoryId);
     setEditRecurrence(subscription.recurrence);
-    const dueDateParts = splitSubscriptionDueDate(subscription.dueDate);
+    const signatureDate = calculateSignatureDate(subscription.dueDate || '', subscription.recurrence);
+    const dueDateParts = splitSubscriptionDueDate(signatureDate);
     setEditDueDay(dueDateParts.day || subscription.billingDate.toString().padStart(2, '0'));
     setEditDueMonth(dueDateParts.month || String(new Date().getMonth() + 1).padStart(2, '0'));
     setEditDueYear(dueDateParts.year || String(new Date().getFullYear()));
@@ -139,9 +142,9 @@ export default function TabOneScreen() {
       return;
     }
 
-    const dueDate = buildSubscriptionDueDate(editDueDay, editDueMonth, editDueYear);
-    if (!dueDate) {
-      showError('Data de vencimento deve ser uma data válida.');
+    const signatureDate = buildSubscriptionDueDate(editDueDay, editDueMonth, editDueYear);
+    if (!signatureDate) {
+      showError('Data de assinatura deve ser uma data válida.');
       return;
     }
 
@@ -151,6 +154,7 @@ export default function TabOneScreen() {
     }
 
     try {
+      const nextDueDate = calculateNextDueDate(signatureDate, editRecurrence);
       await updateSubscription(selectedSubscription.id, {
         serviceName: editServiceName.trim(),
         value: newValue,
@@ -158,7 +162,7 @@ export default function TabOneScreen() {
         billingDate: parseInt(editDueDay, 10),
         categoryId: editCategoryId,
         recurrence: editRecurrence,
-        dueDate,
+        dueDate: nextDueDate,
       });
       showSuccess('Assinatura atualizada com sucesso.');
       setModalVisible(false);
@@ -371,7 +375,7 @@ export default function TabOneScreen() {
                 </Picker>
               </View>
 
-              <Text style={[styles.modalLabel, { color: colors.text }]}>Vencimento (dia / mês / ano):</Text>
+              <Text style={[styles.modalLabel, { color: colors.text }]}>Data de Assinatura (dia / mês / ano):</Text>
               <View style={styles.dueDateRow}>
                 <TextInput
                   style={[styles.input, styles.dueDateInput, { backgroundColor: colors.inputBackground, color: colors.text, borderColor: colors.inputBorder }]}
