@@ -12,6 +12,7 @@ import { subscriptionNotificationService } from '@/src/services/SubscriptionNoti
 import { currencyConversionService } from '@/src/services/CurrencyConversionService';
 import type { SupportedCurrency } from '@/src/services/CurrencyConversionService';
 import type { SubscriptionRecurrence } from '@/src/utils/subscriptionSchedule';
+import { useAuth } from '@/src/contexts/AuthContext';
 
 export type SubscriptionStatus = 'active' | 'inactive' | 'cancelled';
 
@@ -54,6 +55,7 @@ function normalizeRecurrence(recurrence: string | null | undefined): Subscriptio
 // Hook customizado para centralizar leitura de assinaturas.
 // Importante: evita duplicar lógica de banco na UI.
 export function useSubscriptions() {
+    const { user } = useAuth();
     // Estado com as assinaturas já mapeadas para a camada de apresentação.
     const [items, setItems] = useState<SubscriptionItem[]>([]);
 
@@ -82,7 +84,8 @@ export function useSubscriptions() {
         try {
             const collection = database.get<Subscription>('subscriptions');
             const rows = await collection.query().fetch();
-            const mapped = await Promise.all(rows.map(async (row) => {
+            const filteredRows = user ? rows.filter(row => row.userId === user.id) : [];
+            const mapped = await Promise.all(filteredRows.map(async (row) => {
                 const category = await row.category.fetch();
 
                 return {
@@ -128,7 +131,7 @@ export function useSubscriptions() {
 
         // Cleanup obrigatório para evitar vazamento de memória.
         return () => subscription.unsubscribe();
-    }, []);
+    }, [user]);
 
     // Busca uma assinatura específica pelo ID
     const getSubscriptionById = async (id: string): Promise<SubscriptionItem | null> => {

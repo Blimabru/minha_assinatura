@@ -12,6 +12,7 @@ import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { formatCurrencyInput, parseCurrencyStringToNumber } from '../../src/utils/formatCurrency';
 import { useTopAlert } from '../../src/hooks/useTopAlert';
+import { useAuth } from '@/src/contexts/AuthContext';
 import {
   buildSubscriptionDueDate,
   SUBSCRIPTION_RECURRENCE_OPTIONS,
@@ -47,6 +48,7 @@ export default function CreateSubscriptionScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { TopAlert, showError, showSuccess } = useTopAlert();
+  const { user } = useAuth();
 
   // Estados do formulário
   const [formData, setFormData] = useState<FormData>({
@@ -213,7 +215,8 @@ export default function CreateSubscriptionScreen() {
       return;
     }
 
-    if (!currentUserId) {
+    const activeUserId = user?.id || currentUserId;
+    if (!activeUserId) {
       showError('Usuário não identificado.');
       return;
     }
@@ -240,7 +243,7 @@ export default function CreateSubscriptionScreen() {
           subscription.currency = formData.currency;
           subscription.billingDate = parseInt(formData.realizationDay, 10);
           subscription.categoryId = formData.categoryId;
-          subscription.userId = currentUserId;
+          subscription.userId = activeUserId;
           subscription.isActive = true;
           subscription.status = 'active';
           subscription.recurrence = formData.recurrence;

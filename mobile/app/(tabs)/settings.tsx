@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, StyleSheet, Switch } from 'react-native';
+import { View, StyleSheet, Switch, Pressable, ActivityIndicator } from 'react-native';
 import { Text } from '@/components/Themed';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useSync } from '@/src/contexts/SyncContext';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 /*
   settings.tsx
@@ -17,7 +18,7 @@ import { useSync } from '@/src/contexts/SyncContext';
 export default function SettingsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  const { syncStatus, lastSyncedAt } = useSync();
+  const { syncStatus, lastSyncedAt, syncInBackground } = useSync();
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -65,21 +66,65 @@ export default function SettingsScreen() {
       {/* Bloco de Status da Sincronização Automática */}
       <View style={[styles.syncCard, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
         <View style={styles.syncHeader}>
-          <Text style={[styles.syncTitle, { color: colors.text }]}>Sincronização na Nuvem</Text>
+          <View style={styles.syncTitleContainer}>
+            <FontAwesome 
+              name={
+                syncStatus === 'syncing' ? 'refresh' :
+                syncStatus === 'synced' ? 'check-circle' :
+                syncStatus === 'offline' ? 'exclamation-circle' :
+                syncStatus === 'error' ? 'exclamation-triangle' : 'cloud'
+              } 
+              size={18} 
+              color={getStatusColor(syncStatus)} 
+              style={styles.syncHeaderIcon} 
+            />
+            <Text style={[styles.syncTitle, { color: colors.text }]}>Sincronização na Nuvem</Text>
+          </View>
           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(syncStatus) }]}>
             <Text style={styles.statusBadgeText}>{getStatusLabel(syncStatus)}</Text>
           </View>
         </View>
         
-        <Text style={[styles.syncText, { color: colors.text }]}>
+        <Text style={[styles.syncText, { color: colors.textSecondary }]}>
           {getSyncDescription(syncStatus, lastSyncedAt)}
         </Text>
         
-        {lastSyncedAt && (
-          <Text style={[styles.lastSyncText, { color: colors.tabIconDefault }]}>
-            Último sincronismo: {lastSyncedAt}
-          </Text>
-        )}
+        <View style={[styles.syncFooter, { borderTopColor: colors.cardBorder }]}>
+          {lastSyncedAt ? (
+            <Text style={[styles.lastSyncText, { color: colors.textTertiary }]}>
+              Último: {lastSyncedAt}
+            </Text>
+          ) : (
+            <Text style={[styles.lastSyncText, { color: colors.textTertiary }]}>
+              Nunca sincronizado
+            </Text>
+          )}
+          
+          <Pressable
+            onPress={syncInBackground}
+            disabled={syncStatus === 'syncing'}
+            style={({ pressed }) => [
+              styles.syncButton,
+              { 
+                backgroundColor: syncStatus === 'syncing' ? colors.inputBackground : colors.tint,
+                borderColor: colors.cardBorder,
+                opacity: pressed && syncStatus !== 'syncing' ? 0.8 : 1,
+              }
+            ]}
+          >
+            {syncStatus === 'syncing' ? (
+              <View style={styles.syncButtonContent}>
+                <ActivityIndicator size="small" color={colors.textSecondary} style={{ marginRight: 6 }} />
+                <Text style={[styles.syncButtonText, { color: colors.textSecondary }]}>Sincronizando...</Text>
+              </View>
+            ) : (
+              <View style={styles.syncButtonContent}>
+                <FontAwesome name="refresh" size={12} color="#FFF" style={{ marginRight: 6 }} />
+                <Text style={[styles.syncButtonText, { color: '#FFF' }]}>Sincronizar</Text>
+              </View>
+            )}
+          </Pressable>
+        </View>
       </View>
 
       <View style={[styles.row, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}>
@@ -138,8 +183,38 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   lastSyncText: {
-    fontSize: 12,
+    fontSize: 11,
     fontStyle: 'italic',
+  },
+  syncTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  syncHeaderIcon: {
+    marginRight: 6,
+  },
+  syncFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 12,
+  },
+  syncButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  syncButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  syncButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   row: { 
     flexDirection: 'row', 
