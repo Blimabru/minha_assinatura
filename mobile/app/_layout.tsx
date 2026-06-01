@@ -8,6 +8,7 @@ import 'react-native-reanimated';
 import AppDatabaseProvider from '@/database/providers/DatabaseProvider';
 import BatteryOptimizationProvider from '@/components/BatteryOptimizationProvider';
 import { AuthProvider } from '@/src/contexts/AuthContext';
+import { SyncProvider } from '@/src/contexts/SyncContext';
 import { useExchangeRateSync } from '@/src/hooks/useExchangeRateSync';
 
 import { useColorScheme } from '@/components/useColorScheme';
@@ -59,17 +60,19 @@ function RootLayoutContent() {
 
   return (
     <AppDatabaseProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <BatteryOptimizationProvider />
-        <Stack>
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="subscriptions" options={{ headerShown: false }} />
-          <Stack.Screen name="discounts-page/index" options={{ title: 'Cupons' }} />
-        </Stack>
-      </ThemeProvider>
+      <SyncProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <BatteryOptimizationProvider />
+          <Stack>
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="subscriptions" options={{ headerShown: false }} />
+            <Stack.Screen name="discounts-page/index" options={{ title: 'Cupons' }} />
+          </Stack>
+        </ThemeProvider>
+      </SyncProvider>
     </AppDatabaseProvider>
   );
 }
