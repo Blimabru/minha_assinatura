@@ -14,9 +14,11 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isSignout: boolean;
+  isPremium: boolean;
   signUp: (email: string, name: string, password: string) => Promise<void>;
   signIn: (email: string, password: string, rememberMe: boolean) => Promise<void>;
   signOut: () => Promise<void>;
+  purchasePremium: () => Promise<void>;
 }
 
 const getApiUrl = () => {
@@ -39,26 +41,35 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         case 'RESTORE_TOKEN':
           return {
             ...prevState,
-            user: action.payload,
+            user: action.payload.user,
+            isPremium: action.payload.isPremium,
             isLoading: false,
           };
         case 'SIGN_IN':
           return {
             ...prevState,
             isSignout: false,
-            user: action.payload,
+            user: action.payload.user,
+            isPremium: action.payload.isPremium,
           };
         case 'SIGN_UP':
           return {
             ...prevState,
             isSignout: false,
-            user: action.payload,
+            user: action.payload.user,
+            isPremium: action.payload.isPremium,
           };
         case 'SIGN_OUT':
           return {
             ...prevState,
             isSignout: true,
             user: null,
+            isPremium: false,
+          };
+        case 'SET_PREMIUM':
+          return {
+            ...prevState,
+            isPremium: action.payload,
           };
       }
     },
@@ -66,6 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       isLoading: true,
       isSignout: false,
       user: null,
+      isPremium: false,
     }
   );
 
@@ -74,13 +86,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         const userJson = await AsyncStorage.getItem('user');
         if (userJson) {
-          dispatch({ type: 'RESTORE_TOKEN', payload: JSON.parse(userJson) });
+          const userObj = JSON.parse(userJson);
+          const isPremiumStr = await AsyncStorage.getItem(`user_premium_${userObj.email}`);
+          dispatch({ 
+            type: 'RESTORE_TOKEN', 
+            payload: { user: userObj, isPremium: isPremiumStr === 'true' } 
+          });
         } else {
-          dispatch({ type: 'RESTORE_TOKEN', payload: null });
+          dispatch({ type: 'RESTORE_TOKEN', payload: { user: null, isPremium: false } });
         }
       } catch (e) {
         console.warn('Failed to restore token', e);
-        dispatch({ type: 'RESTORE_TOKEN', payload: null });
+        dispatch({ type: 'RESTORE_TOKEN', payload: { user: null, isPremium: false } });
       }
     };
 
@@ -91,6 +108,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     user: state.user,
     isLoading: state.isLoading,
     isSignout: state.isSignout,
+    isPremium: state.isPremium,
     signUp: async (email: string, name: string, password: string) => {
       try {
         const response = await fetch(`${API_URL}/auth/register`, {
@@ -119,7 +137,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await AsyncStorage.setItem(`user_${email}_token`, token);
         await AsyncStorage.setItem(`user_${email}_password`, password);
 
-        dispatch({ type: 'SIGN_UP', payload: newUser });
+        dispatch({ type: 'SIGN_UP', payload: { user: newUser, isPremium: false } });
       } catch (e: any) {
         throw new Error(e.message || 'Falha ao registrar. Tente novamente.');
       }
@@ -152,7 +170,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         await AsyncStorage.setItem(`user_${email}_token`, token);
         await AsyncStorage.setItem(`user_${email}_password`, password);
 
-        dispatch({ type: 'SIGN_IN', payload: user });
+        const isPremiumStr = await AsyncStorage.getItem(`user_premium_${email}`);
+        dispatch({ type: 'SIGN_IN', payload: { user, isPremium: isPremiumStr === 'true' } });
       } catch (e: any) {
         throw new Error(e.message || 'E-mail ou senha incorretos.');
       }
@@ -163,6 +182,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         dispatch({ type: 'SIGN_OUT' });
       } catch {
         throw new Error('Falha ao fazer logout.');
+      }
+    },
+    purchasePremium: async () => {
+      try {
+        if (!state.user) return;
+        const email = state.user.email;
+        await AsyncStorage.setItem(`user_premium_${email}`, 'true');
+        dispatch({ type: 'SET_PREMIUM', payload: true });
+      } catch (e) {
+        throw new Error('Falha ao registrar compra.');
       }
     },
   };
