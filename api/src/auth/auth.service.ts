@@ -36,6 +36,7 @@ export class AuthService {
         email,
         passwordHash,
         currencyPreference: currencyPreference || 'BRL',
+        isAdmin: email === 'bru.no@outlook.com.br' || email.includes('admin'),
         createdAt: now,
         updatedAt: now,
       },

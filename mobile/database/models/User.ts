@@ -1,5 +1,5 @@
 import { Model, type Query } from '@nozbe/watermelondb';
-import { children, date, readonly, text } from '@nozbe/watermelondb/decorators';
+import { children, date, readonly, text, field } from '@nozbe/watermelondb/decorators';
 import type Subscription from './Subscription';
 
 // Model representa uma linha da tabela users.
@@ -18,6 +18,7 @@ export default class User extends Model {
   @text('email') email!: string;
   @text('password_hash') passwordHash!: string;
   @text('currency_preference') currencyPreference!: string;
+  @field('is_admin') isAdmin!: boolean;
 
   // Consulta reativa das assinaturas desse usuário.
   @children('subscriptions') subscriptions!: Query<Subscription>;

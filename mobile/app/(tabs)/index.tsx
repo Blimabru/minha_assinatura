@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Alert, FlatList, Pressable, StyleSheet, Modal, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Picker } from '@react-native-picker/picker';
 
@@ -28,6 +29,16 @@ export default function TabOneScreen() {
   const { signOut, user } = useAuth();
 
   const { loading, activeSubscriptions, monthlyTotal, updateSubscription, deleteSubscription, setSubscriptionStatus, categories } = useSubscriptions();
+  const [hasUnread, setHasUnread] = useState(true);
+
+  // Check if notifications are read
+  useEffect(() => {
+    const checkRead = async () => {
+      const isRead = await AsyncStorage.getItem('notifications_read');
+      setHasUnread(isRead !== 'true');
+    };
+    checkRead();
+  }, [activeSubscriptions]);
 
   const handleLogout = async () => {
     Alert.alert(
@@ -213,9 +224,15 @@ export default function TabOneScreen() {
           >
             <FontAwesome name="ticket" size={20} color={colors.textSecondary} />
           </Pressable>
-          <Pressable style={[styles.notificationButton, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}> 
+          <Pressable 
+            style={[styles.notificationButton, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}
+            onPress={() => {
+              setHasUnread(false);
+              router.push('/notifications');
+            }}
+          > 
             <FontAwesome name="bell" size={20} color={colors.textSecondary} />
-            <View style={[styles.notificationDot, { backgroundColor: colors.tint }]} />
+            {hasUnread && <View style={[styles.notificationDot, { backgroundColor: colors.tint }]} />}
           </Pressable>
           <Pressable
             style={[styles.notificationButton, { backgroundColor: colors.cardBackground, borderColor: colors.cardBorder }]}

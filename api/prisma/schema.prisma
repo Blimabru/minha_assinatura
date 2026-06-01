@@ -17,6 +17,7 @@ model User {
   email              String   @unique
   passwordHash       String   @map("password_hash")
   currencyPreference String   @default("BRL") @map("currency_preference")
+  isAdmin            Boolean  @default(false) @map("is_admin")
   createdAt          Float    @map("created_at") // Unix timestamp em ms (Float para evitar problemas de serialização BigInt)
   updatedAt          Float    @map("updated_at") // Unix timestamp em ms
   deletedAt          Float?   @map("deleted_at") // Soft delete
@@ -66,4 +67,29 @@ model Subscription {
   deletedAt      Float?   @map("deleted_at") // Soft delete
 
   @@map("subscriptions")
+}
+
+model Ad {
+  id          String @id
+  title       String
+  description String
+  icon        String
+  color       String
+  createdAt   Float  @map("created_at")
+
+  @@map("ads")
+}
+
+model Coupon {
+  id                 String @id
+  serviceName        String @map("service_name")
+  description        String
+  discountCode       String @map("discount_code")
+  discountPercentage Float  @map("discount_percentage")
+  externalLink       String @map("external_link")
+  affiliateLink      String @map("affiliate_link")
+  category           String
+  createdAt          Float  @map("created_at")
+
+  @@map("coupons")
 }

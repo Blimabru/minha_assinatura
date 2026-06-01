@@ -71,6 +71,7 @@ export const SubscriptionNotificationIntegration: React.FC = () => {
             (user as any).email = 'usuario.local@minhaassinatura.app';
             (user as any).password_hash = 'local_dev_only';
             (user as any).currency_preference = 'BRL';
+            (user as any).isAdmin = false;
           });
           userList = [createdUser];
         });

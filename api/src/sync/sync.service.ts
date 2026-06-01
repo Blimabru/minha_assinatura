@@ -323,4 +323,53 @@ export class SyncService {
 
     return { success: true };
   }
+
+  async getAds() {
+    return this.prisma.ad.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createAd(title: string, description: string, icon: string, color: string) {
+    return this.prisma.ad.create({
+      data: {
+        id: Math.random().toString(36).substring(2, 15),
+        title,
+        description,
+        icon,
+        color,
+        createdAt: Date.now(),
+      },
+    });
+  }
+
+  async getCoupons() {
+    return this.prisma.coupon.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createCoupon(data: {
+    serviceName: string;
+    description: string;
+    discountCode: string;
+    discountPercentage: number;
+    externalLink: string;
+    affiliateLink: string;
+    category: string;
+  }) {
+    return this.prisma.coupon.create({
+      data: {
+        id: Math.random().toString(36).substring(2, 15),
+        serviceName: data.serviceName,
+        description: data.description,
+        discountCode: data.discountCode,
+        discountPercentage: Number(data.discountPercentage),
+        externalLink: data.externalLink,
+        affiliateLink: data.affiliateLink,
+        category: data.category,
+        createdAt: Date.now(),
+      },
+    });
+  }
 }

@@ -85,6 +85,7 @@ function RootLayoutContent() {
             <Stack.Screen name="auth" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="notifications" options={{ presentation: 'modal', headerShown: false }} />
             <Stack.Screen name="subscriptions" options={{ headerShown: false }} />
             <Stack.Screen name="discounts-page/index" options={{ title: 'Cupons' }} />
           </Stack>

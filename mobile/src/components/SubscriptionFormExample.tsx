@@ -37,6 +37,7 @@ export const SubscriptionFormExample: React.FC<SubscriptionFormExampleProps> = (
     serviceName: 'Netflix',
     price: 34.9,
     currency: 'BRL',
+    recurrence: 'mensal',
     frequency: { type: 'monthly', interval: 1 } as SubscriptionFrequency,
     startDate: new Date(),
     expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 dias de agora
@@ -72,6 +73,7 @@ export const SubscriptionFormExample: React.FC<SubscriptionFormExampleProps> = (
             (user as any).email = 'usuario.local@minhaassinatura.app';
             (user as any).password_hash = 'local_dev_only';
             (user as any).currency_preference = 'BRL';
+            (user as any).isAdmin = false;
           });
           userList = [createdUser];
         });
@@ -145,6 +147,7 @@ export const SubscriptionFormExample: React.FC<SubscriptionFormExampleProps> = (
         serviceName: '',
         price: 0,
         currency: 'BRL',
+        recurrence: 'mensal',
         frequency: { type: 'monthly', interval: 1 } as SubscriptionFrequency,
         startDate: new Date(),
         expirationDate: new Date(),

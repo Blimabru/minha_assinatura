@@ -104,6 +104,7 @@ export default function CreateSubscriptionScreen() {
               user.email = 'usuario.local@minhaassinatura.app';
               user.passwordHash = 'local_dev_only';
               user.currencyPreference = 'BRL';
+              (user as any).isAdmin = false;
             });
             setCurrentUserId(createdUser.id);
           });
@@ -689,5 +690,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-
+  pickerWrapper: {
+    borderWidth: 1,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  inlinePicker: {
+    height: 50,
+    width: '100%',
+  },
 });
